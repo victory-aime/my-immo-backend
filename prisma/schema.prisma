@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  picture       String?
+  email         String?        @unique
+  password      String?
+  emailVerified Boolean        @default(false)
+  status        UserStatus     @default(ACTIVE)
+  refreshToken  String?
+  enabled2FA    Boolean        @default(false)
+  role          UserRole       @default(USER)
+  identities    AuthIdentity[]
+  otpPolicy     OtpPolicy?
+  otpCode       OtpCode[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model AuthIdentity {
+  id             String       @id @default(uuid())
+  provider       AuthProvider
+  providerUserId String
+  email          String?
+  user           User         @relation(fields: [userId], references: [id])
+  userId         String
+
+  @@unique([provider, providerUserId])
+}
+
+model OtpPolicy {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  otpRequestCount Int       @default(0)
+  isBlocked       Boolean   @default(false)
+  blockUntil      DateTime?
+  limit           Int       @default(3)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  userId    String
+  code      String
+  secret    String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum AuthProvider {
+  google
+  credentials
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum UserRole {
+  USER
+  IMMO_OWNER
+  ADMIN
+}
