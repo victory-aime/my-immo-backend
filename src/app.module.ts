@@ -5,9 +5,13 @@ import {
   utilities as nestWinstonModuleUtilities,
   WinstonModule,
 } from 'nest-winston';
-import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-import { CommonModule } from './modules/common/common.module';
+import { AuthGuard, AuthModule } from '@thallesp/nestjs-better-auth';
+import { betterAuth } from 'better-auth';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { betterAuthPrisma } from '_root/lib/auth';
+import { APP_GUARD } from '@nestjs/core';
+import { twoFactor } from 'better-auth/plugins';
 
 @Module({
   imports: [
@@ -31,9 +35,51 @@ import { CommonModule } from './modules/common/common.module';
       envFilePath: [`.env.${process.env.NODE_ENV}`],
       isGlobal: true,
     }),
-    CommonModule,
-    AuthModule,
+    AuthModule.forRootAsync({
+      useFactory: () => ({
+        auth: betterAuth({
+          appName: process.env.APP_NAME,
+          baseURL: process.env.WEB_APP_URL!,
+          user: {
+            additionalFields: {
+              role: {
+                type: 'string',
+                input: false,
+              },
+            },
+          },
+          database: prismaAdapter(betterAuthPrisma, {
+            provider: 'postgresql',
+          }),
+          emailAndPassword: {
+            enabled: true,
+            autoSignIn: false,
+          },
+          socialProviders: {
+            google: {
+              enabled: true,
+              clientId: process.env.GOOGLE_CLIENT_ID!,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+              accessType: 'offline',
+            },
+          },
+          plugins: [
+            twoFactor({
+              issuer: process.env.APP_NAME,
+              skipVerificationOnEnable: true,
+            }),
+          ],
+          trustedOrigins: [process.env.WEB_APP_URL!],
+        }),
+      }),
+    }),
     UsersModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
   ],
 })
 export class AppModule {}

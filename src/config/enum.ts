@@ -1,7 +1,7 @@
 enum BASE_APIS_URL {
-  UNSECURED = '_api/v1/unsecured',
-  SECURED = '_api/v1/secure',
-  SWAGGER = 'api/v1/bo',
+  UNSECURED = 'v1/unsecured',
+  SECURED = 'v1/secure',
+  SWAGGER = 'v1/bo',
 }
 
 enum CLOUDINARY_FOLDER_NAME {

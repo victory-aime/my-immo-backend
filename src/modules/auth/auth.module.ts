@@ -3,7 +3,7 @@ import { JwtTokenModule } from '../jwt/jwt.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { PrismaService } from '../../config/services';
+import { PrismaService } from '../../database/prisma.service';
 
 @Module({
   imports: [UsersModule, JwtTokenModule],

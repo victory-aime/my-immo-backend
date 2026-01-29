@@ -13,14 +13,20 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { SWAGGER_TAGS } from '_root/config/enum';
+import {
+  AllowAnonymous,
+  AuthGuard,
+  Session,
+  UserSession,
+} from '@thallesp/nestjs-better-auth';
 
+@ApiBearerAuth()
 @ApiTags(SWAGGER_TAGS.USER_MANAGEMENT)
+@UseGuards(AuthGuard)
 @Controller()
 export class UsersController {
   constructor(private readonly userService: UsersService) {}
 
-  @UseGuards(MiddlewareGuard)
-  @ApiBearerAuth()
   @Get(API_URL.USER.INFO)
   @ApiOperation({ summary: 'Récupérer les informations d’un utilisateur' })
   @ApiQuery({
@@ -35,7 +41,6 @@ export class UsersController {
     return this.userService.userInfo(userId);
   }
 
-  @UseGuards(MiddlewareGuard)
   @ApiBearerAuth()
   @Post(API_URL.USER.REGENERATE_PASSWORD)
   @ApiOperation({ summary: 'Régénérer le mot de passe utilisateur' })
@@ -59,5 +64,18 @@ export class UsersController {
   @ApiBadRequestResponse({ description: 'Email ou mot de passe invalide.' })
   async regeneratePassword(@Body() data: { email: string; password: string }) {
     return this.userService.regeneratePassword(data.email, data.password);
+  }
+
+  @Get(API_URL.USER.SESSION)
+  @ApiOperation({ summary: 'Récupérer la session utilisateur actuelle' })
+  @ApiOkResponse({ description: 'Session utilisateur récupérée avec succès.' })
+  async getSession(@Session() session: UserSession) {
+    return session;
+  }
+
+  @AllowAnonymous()
+  @Get('public')
+  async getPublic() {
+    return true;
   }
 }

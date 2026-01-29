@@ -4,7 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from '../../config/services';
+import { PrismaService } from '../../database/prisma.service';
 import { UsersService } from '../users/users.service';
 import { JwtTokenService } from '../jwt/jwt.service';
 import * as bcrypt from 'bcrypt';
@@ -52,31 +52,16 @@ export class AuthService {
         await this.jwtTokenService.verifyRefreshToken(refreshToken);
       const user = await this.usersService.findUser({ id: payload.sub });
 
-      if (!user || !user.refreshToken) {
-        throw new UnauthorizedException('No refresh token found');
-      }
-
-      const isValid = await bcrypt.compare(refreshToken, user.refreshToken);
-      if (!isValid) {
-        throw new UnauthorizedException('Refresh Token invalid');
-      }
-
-      const [newAccessToken, newRefreshToken] = await Promise.all([
+      const [newAccessToken] = await Promise.all([
         this.jwtTokenService.generateAccessToken({
-          id: user.id,
-          role: user.role,
+          id: user?.id!,
+          role: user?.role,
         }),
-        this.jwtTokenService.generateRefreshToken(user.id),
       ]);
-
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { refreshToken: await bcrypt.hash(newRefreshToken, 12) },
-      });
 
       return {
         access_token: newAccessToken,
-        refresh_token: newRefreshToken,
+        refresh_token: 'newRefreshToken',
       };
     } catch (error) {
       console.log(error);
@@ -108,11 +93,6 @@ export class AuthService {
 
       const refresh_token = this.jwtTokenService.generateRefreshToken(user.id);
 
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { refreshToken: await bcrypt.hash(refresh_token, 12) },
-      });
-
       return {
         message: 'Successfully login',
         access_token,
@@ -136,10 +116,6 @@ export class AuthService {
    */
   async logout(userId: string): Promise<{ message: string }> {
     try {
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { refreshToken: null },
-      });
       return {
         message: 'Successfully logout',
       };
@@ -154,65 +130,61 @@ export class AuthService {
     email_verified?: boolean;
     name?: string;
     picture?: string;
-  }): Promise<{
-    message: string;
-    access_token: string;
-    refresh_token: string;
-  }> {
+  }) {
     // 1. Vérifier si une identité Google existe déjà
-    const identity = await this.prisma.authIdentity.findUnique({
-      where: {
-        provider_providerUserId: {
-          provider: 'google',
-          providerUserId: googleUser.sub,
-        },
-      },
-      include: { user: true },
-    });
-
-    let user = identity?.user;
-
-    // 2. Si pas d’identité → créer user + identité
-    if (!user) {
-      user = await this.prisma.user.create({
-        data: {
-          email: googleUser.email ?? null,
-          name: googleUser.name!,
-          picture: googleUser.picture,
-          emailVerified: googleUser.email_verified ?? false,
-          role: 'USER',
-          status: 'ACTIVE',
-        },
-      });
-
-      await this.prisma.authIdentity.create({
-        data: {
-          provider: 'google',
-          providerUserId: googleUser.sub,
-          userId: user.id,
-          email: user.email,
-        },
-      });
-    }
-
-    // 3. Générer TES tokens
-    const access_token = this.jwtTokenService.generateAccessToken({
-      id: user.id,
-      role: user.role,
-    });
-
-    const refresh_token = this.jwtTokenService.generateRefreshToken(user.id);
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: await bcrypt.hash(refresh_token, 12) },
-    });
-
-    return {
-      message: 'Successfully login with Google',
-      access_token,
-      refresh_token,
-    };
+    // const identity = await this.prisma.authIdentity.findUnique({
+    //   where: {
+    //     provider_providerUserId: {
+    //       provider: 'google',
+    //       providerUserId: googleUser.sub,
+    //     },
+    //   },
+    //   include: { user: true },
+    // });
+    //
+    // let user = identity?.user;
+    //
+    // // 2. Si pas d’identité → créer user + identité
+    // if (!user) {
+    //   user = await this.prisma.user.create({
+    //     data: {
+    //       email: googleUser.email ?? null,
+    //       name: googleUser.name!,
+    //       picture: googleUser.picture,
+    //       emailVerified: googleUser.email_verified ?? false,
+    //       role: 'USER',
+    //       status: 'ACTIVE',
+    //     },
+    //   });
+    //
+    //   await this.prisma.authIdentity.create({
+    //     data: {
+    //       provider: 'google',
+    //       providerUserId: googleUser.sub,
+    //       userId: user.id,
+    //       email: user.email,
+    //     },
+    //   });
+    // }
+    //
+    // // 3. Générer TES tokens
+    // const access_token = this.jwtTokenService.generateAccessToken({
+    //   id: user.id,
+    //   role: user.role,
+    // });
+    //
+    // const refresh_token = this.jwtTokenService.generateRefreshToken(user.id);
+    //
+    // await this.prisma.user.update({
+    //   where: { id: user.id },
+    //   data: { refreshToken: await bcrypt.hash(refresh_token, 12) },
+    // });
+    //
+    // return {
+    //   message: 'Successfully login with Google',
+    //   access_token,
+    //   refresh_token,
+    // };
   }
 
   async resetPassword(

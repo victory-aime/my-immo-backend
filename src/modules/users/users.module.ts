@@ -1,7 +1,7 @@
 import { UsersService } from './users.service';
 import { Module } from '@nestjs/common';
 import { UsersController } from './users.controller';
-import { PrismaService } from '../../config/services';
+import { PrismaService } from '../../database/prisma.service';
 import { JwtTokenModule } from '../jwt/jwt.module';
 
 @Module({

@@ -3,6 +3,7 @@ import { BASE_APIS_URL } from './enum';
 export const API_URL = {
   AUTH: {
     SSO_GOOGLE: `${BASE_APIS_URL.SECURED}/auth/sso/google`,
+    SYNC_USER: `${BASE_APIS_URL.UNSECURED}/auth/sync-user`,
     LOGIN: `${BASE_APIS_URL.UNSECURED}/auth/login`,
     REFRESH_TOKEN: `${BASE_APIS_URL.SECURED}/auth/refresh-token`,
     LOGOUT: `${BASE_APIS_URL.SECURED}/auth/logout`,
@@ -11,6 +12,7 @@ export const API_URL = {
   },
   USER: {
     INFO: `${BASE_APIS_URL.SECURED}/user/info`,
+    SESSION: `${BASE_APIS_URL.SECURED}/user/session`,
     REGENERATE_PASSWORD: `${BASE_APIS_URL.SECURED}/user/regenerate-password`,
   },
   COMMON: {

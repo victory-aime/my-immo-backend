@@ -1,18 +1,32 @@
-import { Body, Controller, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { API_URL } from '_root/config/api';
 import { ApiTags } from '@nestjs/swagger';
 import { SWAGGER_TAGS } from '_root/config/enum';
 import { LoginDto, RefreshTokenDto, ResetPasswordDto } from './auth.dto';
 import { GoogleAuthGuard } from '_root/guard/google.guard';
+import { UsersService } from '_root/modules/users/users.service';
 
 @ApiTags(SWAGGER_TAGS.AUTH_MANAGEMENT)
 @Controller()
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UsersService,
+  ) {}
 
   @Post(API_URL.AUTH.LOGIN)
   async login(@Body() user: LoginDto) {
+    console.log('login dto', user);
     return this.authService.login(user);
   }
 

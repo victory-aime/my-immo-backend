@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
-import { OtpModule } from './otp/otp.module';
 
 @Module({
-  imports: [OtpModule],
+  imports: [],
 })
 export class CommonModule {}

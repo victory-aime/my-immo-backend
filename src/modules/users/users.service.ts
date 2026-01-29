@@ -1,13 +1,13 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '_root/config/services';
+import { PrismaService } from '_root/database/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from '_prisma/enums';
-import { CreateSimpleUserDto, OnboardingSalonOwnerDto } from './users.dto';
 
 @Injectable()
 export class UsersService {
@@ -20,7 +20,9 @@ export class UsersService {
 
     const user = await this.prisma.user.findUnique({
       where: uniqueWhere,
-      include: {},
+      include: {
+        accounts: true,
+      },
     });
 
     if (!user) return null;
@@ -34,7 +36,7 @@ export class UsersService {
       if (!user) {
         throw new NotFoundException('No user');
       }
-      const { password: _, refreshToken, ...userData } = user;
+      const { password: _, ...userData } = user;
       return {
         ...userData,
       };
