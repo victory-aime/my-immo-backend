@@ -51,6 +51,9 @@ import { twoFactor } from 'better-auth/plugins';
           database: prismaAdapter(betterAuthPrisma, {
             provider: 'postgresql',
           }),
+          emailVerification: {
+            sendVerificationEmail: async ({ user, url, token }, request) => {},
+          },
           emailAndPassword: {
             enabled: true,
             autoSignIn: false,
