@@ -12,6 +12,10 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { betterAuthPrisma } from '_root/lib/auth';
 import { APP_GUARD } from '@nestjs/core';
 import { twoFactor } from 'better-auth/plugins';
+import { EmailService } from '_root/modules/mail/mail.service';
+import { EmailModule } from '_root/modules/mail/mail.module';
+import { formatExpiresIn } from '_root/modules/mail/utils/getExpiresTime';
+import { EXPIRE_TIME } from '_root/config/enum';
 
 @Module({
   imports: [
@@ -36,7 +40,9 @@ import { twoFactor } from 'better-auth/plugins';
       isGlobal: true,
     }),
     AuthModule.forRootAsync({
-      useFactory: () => ({
+      imports: [EmailModule],
+      inject: [EmailService],
+      useFactory: (emailService: EmailService) => ({
         auth: betterAuth({
           appName: process.env.APP_NAME,
           baseURL: process.env.WEB_APP_URL!,
@@ -52,11 +58,45 @@ import { twoFactor } from 'better-auth/plugins';
             provider: 'postgresql',
           }),
           emailVerification: {
-            sendVerificationEmail: async ({ user, url, token }, request) => {},
+            sendOnSignUp: false,
+            autoSignInAfterVerification: true,
+            expiresIn: EXPIRE_TIME._30_MINUTES,
+            sendVerificationEmail: async ({ user, url }) => {
+              if (!user.email) {
+                throw new Error('User email is missing');
+              }
+              await emailService.sendEmailVerificationLink(
+                {
+                  recipients: { name: user.name, address: user.email },
+                  subject: 'Verify your email address',
+                },
+                {
+                  verificationUrl: url,
+                  expireTime: formatExpiresIn(EXPIRE_TIME._30_MINUTES),
+                  username: user.name,
+                },
+              );
+            },
           },
           emailAndPassword: {
             enabled: true,
             autoSignIn: false,
+            requireEmailVerification: true,
+            revokeSessionsOnPasswordReset: true,
+            resetPasswordTokenExpiresIn: EXPIRE_TIME._5_MINUTES,
+            sendResetPassword: async ({ user, url }) => {
+              await emailService.sendResetPasswordEmailLink(
+                {
+                  recipients: { name: user.name, address: user.email },
+                  subject: 'Reset your password',
+                },
+                {
+                  resetPasswordUrl: url,
+                  expireTime: formatExpiresIn(EXPIRE_TIME._5_MINUTES),
+                  username: user?.name,
+                },
+              );
+            },
           },
           socialProviders: {
             google: {

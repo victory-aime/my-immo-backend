@@ -1,0 +1,80 @@
+<html lang='fr'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Vérification de votre email</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f4f6f8;
+        margin: 0;
+        padding: 0;
+        color: #222;
+      }
+      .email-wrapper {
+        max-width: 600px;
+        margin: 40px auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        padding: 32px 28px;
+      }
+      h2 {
+        color: #1a1a1a;
+        text-align: left;
+        margin-bottom: 16px;
+      }
+      p {
+        font-size: 15px;
+        line-height: 1.6;
+        margin: 8px 0;
+      }
+      .verification-link {
+        display: inline-block;
+        background-color: #673ab6;
+        color: #ffffff !important;
+        font-weight: 600;
+        font-size: 16px;
+        text-decoration: none;
+        padding: 14px 28px;
+        border-radius: 8px;
+        margin: 24px 0;
+      }
+      .footer {
+        font-size: 13px;
+        color: #777;
+        margin-top: 30px;
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='email-wrapper'>
+      <h2>Bonjour, {{username}} 👋</h2>
+
+      <p>
+        Merci de vous être inscrit sur MyIMMO ! Veuillez confirmer votre adresse
+        e-mail en cliquant sur le bouton ci-dessous.
+      </p>
+
+      <div style='text-align: center; color: #ffffff'>
+        <a href='{{verificationUrl}}' class='verification-link'>Vérifier mon
+          email</a>
+      </div>
+
+      <p>
+        Ce lien expirera dans
+        <strong>{{expireTime}}</strong>.
+      </p>
+
+      <p>
+        Si vous n'avez pas créé de compte, vous pouvez ignorer cet e-mail.
+      </p>
+
+      <div class='footer'>
+        <p>Merci de votre confiance.</p>
+        <p>— L’équipe MyIMMO</p>
+      </div>
+    </div>
+  </body>
+</html>
