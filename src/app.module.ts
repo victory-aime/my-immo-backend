@@ -44,6 +44,11 @@ import { EXPIRE_TIME } from '_root/config/enum';
       inject: [EmailService],
       useFactory: (emailService: EmailService) => ({
         auth: betterAuth({
+          session: {
+            cookieCache: {
+              enabled: true,
+            },
+          },
           appName: process.env.APP_NAME,
           baseURL: process.env.WEB_APP_URL!,
           user: {

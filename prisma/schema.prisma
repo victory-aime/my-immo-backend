@@ -26,9 +26,15 @@ model User {
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
-  sessions  Session[]
-  accounts  Account[]
-  TwoFactor TwoFactor[]
+  sessions      Session[]
+  accounts      Account[]
+  twoFactor     TwoFactor[]
+  properTyOwner PropertyOwner?
+  message       Message[]
+  favorite      Favorite[]
+  report        Report[]
+  notification  Notification[]
+  RentalRequest RentalRequest[]
 
   @@map("user")
 }
@@ -92,6 +98,208 @@ model TwoFactor {
 
   @@index([userId])
   @@map("twofactor")
+}
+
+// =======================
+// PROFILES
+// =======================
+
+model PropertyOwner {
+  id             String          @id @default(uuid())
+  userId         String          @unique
+  propertyAgency PropertyAgency?
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("property_owner")
+}
+
+model PropertyAgency {
+  id          String        @id @default(uuid())
+  name        String        @unique
+  description String
+  address     String
+  phone       String
+  agencyLogo  String
+  isApprove   Boolean       @default(false)
+  documents   String[]
+  rating      Float?
+  ownerId     String        @unique
+  owner       PropertyOwner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  properties  Property[]
+}
+
+// =======================
+// PROPERTY
+// =======================
+
+model Property {
+  id               String         @id @default(uuid())
+  propertyAgenceId String
+  title            String
+  galleryImages    String[]
+  description      String
+  type             PropertyType
+  price            Decimal        @db.Decimal(10, 2)
+  surface          Int
+  rooms            Int
+  address          String
+  city             String
+  country          String
+  status           PropertyStatus @default(AVAILABLE)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  rentalRequests RentalRequest[]
+  conversations  Conversation[]
+  favorites      Favorite[]
+  reports        Report[]
+  propertyAgency PropertyAgency? @relation(fields: [propertyAgenceId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyAgenceId, title])
+  @@index([propertyAgenceId])
+  @@map("property")
+}
+
+// =======================
+// RENTAL
+// =======================
+
+model RentalRequest {
+  id         String              @id @default(uuid())
+  propertyId String
+  tenantId   String
+  message    String?
+  status     RentalRequestStatus @default(PENDING)
+  createdAt  DateTime            @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant   User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([tenantId])
+  @@map("rental_request")
+}
+
+// =======================
+// MESSAGING
+// =======================
+
+model Conversation {
+  id         String   @id @default(uuid())
+  propertyId String
+  createdAt  DateTime @default(now())
+
+  property Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([propertyId])
+  @@map("conversation")
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("message")
+}
+
+// =======================
+// FAVORITES
+// =======================
+
+model Favorite {
+  id         String   @id @default(uuid())
+  userId     String
+  propertyId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+  @@map("favorite")
+}
+
+// =======================
+// REPORTS
+// =======================
+
+model Report {
+  id         String           @id @default(uuid())
+  reporterId String
+  targetType ReportTargetType
+  targetId   String
+  reason     String
+  createdAt  DateTime         @default(now())
+
+  reporter   User      @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  Property   Property? @relation(fields: [propertyId], references: [id])
+  propertyId String?
+
+  @@index([reporterId])
+  @@map("report")
+}
+
+// =======================
+// NOTIFICATIONS
+// =======================
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  payload   Json
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notification")
+}
+
+// =======================
+// ENUMS
+// =======================
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  STUDIO
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  RESERVED
+  RENTED
+}
+
+enum RentalRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum NotificationType {
+  REQUEST
+  MESSAGE
+  SYSTEM
+}
+
+enum ReportTargetType {
+  PROPERTY
+  USER
 }
 
 enum UserStatus {
