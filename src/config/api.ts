@@ -10,10 +10,15 @@ export const API_URL = {
     FORGOT_PASSWORD: `${BASE_APIS_URL.UNSECURED}/auth/forgot-password`,
     RESET_PASSWORD: `${BASE_APIS_URL.SECURED}/auth/reset-password`,
   },
+  AGENCY: {
+    CREATE_AGENCY: `${BASE_APIS_URL.SECURED}/agency/create`,
+    CHECK_NAME: `${BASE_APIS_URL.UNSECURED}/agency/verified-name`,
+  },
   USER: {
     INFO: `${BASE_APIS_URL.SECURED}/user/info`,
     SESSION: `${BASE_APIS_URL.SECURED}/user/session`,
     REGENERATE_PASSWORD: `${BASE_APIS_URL.SECURED}/user/regenerate-password`,
+    CHECK_EMAIL: `${BASE_APIS_URL.UNSECURED}/user/verified-email`,
   },
   COMMON: {
     INVOICE: {

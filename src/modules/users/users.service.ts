@@ -1,13 +1,10 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { UserRole } from '_prisma/enums';
 
 @Injectable()
 export class UsersService {
@@ -22,6 +19,11 @@ export class UsersService {
       where: uniqueWhere,
       include: {
         accounts: true,
+        propertyOwner: {
+          include: {
+            propertyAgency: true,
+          },
+        },
       },
     });
 
@@ -36,10 +38,7 @@ export class UsersService {
       if (!user) {
         throw new NotFoundException('No user');
       }
-      const { password: _, ...userData } = user;
-      return {
-        ...userData,
-      };
+      return user;
     } catch (error) {
       throw new NotFoundException(error);
     }
@@ -123,5 +122,10 @@ export class UsersService {
         'Une erreur est survenue lors de la régénération du mot de passe. Veuillez réessayer plus tard.',
       );
     }
+  }
+
+  async checkUserEmail(email: string): Promise<boolean> {
+    const user = await this.findUser({ email });
+    return !!user;
   }
 }

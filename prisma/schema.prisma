@@ -29,7 +29,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   twoFactor     TwoFactor[]
-  properTyOwner PropertyOwner?
+  propertyOwner PropertyOwner?
   message       Message[]
   favorite      Favorite[]
   report        Report[]
@@ -125,6 +125,7 @@ model PropertyAgency {
   agencyLogo  String
   isApprove   Boolean       @default(false)
   documents   String[]
+  acceptTerms Boolean       @default(false)
   rating      Float?
   ownerId     String        @unique
   owner       PropertyOwner @relation(fields: [ownerId], references: [id], onDelete: Cascade)

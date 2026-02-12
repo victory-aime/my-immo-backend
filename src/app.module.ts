@@ -16,6 +16,7 @@ import { EmailService } from '_root/modules/mail/mail.service';
 import { EmailModule } from '_root/modules/mail/mail.module';
 import { formatExpiresIn } from '_root/modules/mail/utils/getExpiresTime';
 import { EXPIRE_TIME } from '_root/config/enum';
+import { AgencyModule } from '_root/modules/agency/agency.module';
 
 @Module({
   imports: [
@@ -109,6 +110,7 @@ import { EXPIRE_TIME } from '_root/config/enum';
               clientId: process.env.GOOGLE_CLIENT_ID!,
               clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
               accessType: 'offline',
+              prompt: 'select_account',
             },
           },
           plugins: [
@@ -117,11 +119,16 @@ import { EXPIRE_TIME } from '_root/config/enum';
               skipVerificationOnEnable: true,
             }),
           ],
-          trustedOrigins: [process.env.WEB_APP_URL!],
+          trustedOrigins: [
+            process.env.WEB_APP_URL!,
+            'http://localhost:3000',
+            'http://localhost:5080',
+          ],
         }),
       }),
     }),
     UsersModule,
+    AgencyModule,
   ],
   providers: [
     {

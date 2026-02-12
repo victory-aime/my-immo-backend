@@ -1,7 +1,6 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { API_URL } from '_root/config/api';
-import { MiddlewareGuard } from '_root/guard/middleware.guard';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -71,6 +70,19 @@ export class UsersController {
   @ApiOkResponse({ description: 'Session utilisateur récupérée avec succès.' })
   async getSession(@Session() session: UserSession) {
     return session;
+  }
+
+  @AllowAnonymous()
+  @Post(API_URL.USER.CHECK_EMAIL)
+  @ApiOperation({ summary: 'Verifier un email' })
+  @ApiOkResponse({
+    description: 'return un boolean',
+  })
+  @ApiBadRequestResponse({
+    description: 'Une erreur est survenue réessayer plus tard',
+  })
+  async checkUserEmail(@Body() data: { email: string }) {
+    return this.userService.checkUserEmail(data?.email);
   }
 
   @AllowAnonymous()

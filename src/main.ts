@@ -6,6 +6,7 @@ import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { setupSwagger } from './config/swagger';
 import { AuthService } from '@thallesp/nestjs-better-auth';
 import { toNodeHandler } from 'better-auth/node';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   LoadEnvironmentVariables();
@@ -26,6 +27,7 @@ async function bootstrap() {
   // Re-enable Nest's JSON body parser AFTER mounting BetterAuth
   expressApp.use(require('express').json());
   app.setGlobalPrefix('api');
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
   setupSwagger(app);
 
