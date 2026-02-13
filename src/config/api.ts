@@ -12,6 +12,9 @@ export const API_URL = {
   },
   AGENCY: {
     CREATE_AGENCY: `${BASE_APIS_URL.SECURED}/agency/create`,
+    AGENCY_INFO: `${BASE_APIS_URL.SECURED}/agency`,
+    UPDATE_AGENCY: `${BASE_APIS_URL.SECURED}/agency/update`,
+    CLOSE_AGENCY: `${BASE_APIS_URL.SECURED}/agency/close`,
     CHECK_NAME: `${BASE_APIS_URL.UNSECURED}/agency/verified-name`,
   },
   USER: {

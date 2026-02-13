@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean } from 'class-validator';
+import { IsBoolean, IsString } from 'class-validator';
 
 export class createAgencyOwnerDto {
   @ApiProperty({ example: 'NANA Beauty Salon' })
@@ -41,4 +41,13 @@ export class createAgencyOwnerDto {
   @Transform(({ value }) => value === 'true')
   @IsBoolean()
   acceptTerms: boolean;
+}
+
+export class updateAgencyDto extends createAgencyOwnerDto {
+  @ApiProperty({
+    example: '12GYgZIZ',
+    description: "L'identifiant de l'agence",
+  })
+  @IsString()
+  agencyId: string;
 }

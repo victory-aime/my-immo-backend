@@ -1,13 +1,12 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
-import { createAgencyOwnerDto } from './agency.dto';
-import { UserRole } from '_prisma/enums';
+import { createAgencyOwnerDto, updateAgencyDto } from './agency.dto';
+import { UserRole, PropertyAgencyStatus } from '_prisma/enums';
 import { UsersService } from '_root/modules/users/users.service';
 
 @Injectable()
@@ -16,6 +15,17 @@ export class AgencyService {
     private readonly prismaService: PrismaService,
     private readonly userService: UsersService,
   ) {}
+
+  async findAgency(agencyId: string, ownerId?: string) {
+    const getAgency = await this.prismaService.propertyAgency.findUnique({
+      where: { id: agencyId, ownerId },
+    });
+    if (!getAgency) {
+      throw new NotFoundException('Agency not found');
+    }
+    return getAgency;
+  }
+
   async createAgency(data: createAgencyOwnerDto): Promise<{ message: string }> {
     try {
       const existingUser = await this.userService.findUser({
@@ -74,6 +84,54 @@ export class AgencyService {
         'Une erreur interne est survenue. Veuillez réessayer plus tard.',
       );
     }
+  }
+
+  async updateAgency(data: updateAgencyDto): Promise<{ message: string }> {
+    try {
+      const getAgency = await this.findAgency(data?.agencyId);
+      await this.prismaService.propertyAgency.update({
+        where: { id: getAgency?.id },
+        data: {
+          name: data?.name,
+          description: data?.description,
+          address: data?.address,
+          phone: data?.phone,
+          agencyLogo: data?.agencyLogo,
+        },
+      });
+      return { message: 'yes' };
+    } catch (error) {
+      console.log('error', error);
+      throw new InternalServerErrorException('', {
+        description: 'Une erreur est survenu reessayer plus tard',
+      });
+    }
+  }
+
+  async closeAgency(data: { agencyId: string; ownerId: string }) {
+    const agency = await this.findAgency(data?.agencyId);
+    const getOwner = await this.prismaService.propertyOwner.findUnique({
+      where: {
+        id: data.ownerId,
+      },
+    });
+    if (!getOwner) {
+      throw new BadRequestException(
+        'Une erreur est survenue réessayer plus tard',
+      );
+    }
+    await this.prismaService.propertyAgency.update({
+      where: { id: agency?.id },
+      data: {
+        status: PropertyAgencyStatus.CLOSE,
+      },
+    });
+    await this.prismaService.user.update({
+      where: { id: getOwner?.userId },
+      data: {
+        role: UserRole.USER,
+      },
+    });
   }
 
   async checkAgencyName(name: string): Promise<boolean> {

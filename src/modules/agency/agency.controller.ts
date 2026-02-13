@@ -3,10 +3,10 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { API_URL } from '_root/config/api';
 import {
   ApiBadRequestResponse,
@@ -15,12 +15,9 @@ import {
   ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
-import { createAgencyOwnerDto } from './agency.dto';
+import { createAgencyOwnerDto, updateAgencyDto } from './agency.dto';
 import { AgencyService } from './agency.service';
-import {
-  FileFieldsInterceptor,
-  FilesInterceptor,
-} from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from '_root/modules/cloudinary/uploads.service';
 
 @Controller()
@@ -29,8 +26,21 @@ export class AgencyController {
     private readonly agencyService: AgencyService,
     private readonly uploadFileService: UploadsService,
   ) {}
+
   @ApiBearerAuth()
-  @AllowAnonymous()
+  @Get(API_URL.AGENCY.AGENCY_INFO)
+  @ApiOperation({ summary: "Infos d'une agence" })
+  @ApiOkResponse({
+    description: 'Info récupérer avec success',
+  })
+  @ApiBadRequestResponse({
+    description: 'Une erreur est survenue réessayer plus tard',
+  })
+  async agencyInfo(@Query('agencyId') agencyId: string) {
+    return this.agencyService.findAgency(agencyId);
+  }
+
+  @ApiBearerAuth()
   @Post(API_URL.AGENCY.CREATE_AGENCY)
   @ApiOperation({ summary: 'Créer une agence' })
   @ApiBody({
@@ -56,7 +66,6 @@ export class AgencyController {
       documents?: Express.Multer.File[];
     },
   ) {
-    console.log(files);
     let cloudinaryAgencyLogoFileUrl: string = '';
     let cloudinaryDocumentsFileUrl: string[] = [];
 
@@ -83,7 +92,58 @@ export class AgencyController {
     });
   }
 
-  @AllowAnonymous()
+  @ApiBearerAuth()
+  @Post(API_URL.AGENCY.UPDATE_AGENCY)
+  @ApiOperation({ summary: "Mettre a jour les informations d'une agence" })
+  @ApiBody({
+    type: updateAgencyDto,
+  })
+  @ApiOkResponse({
+    description: 'Agence modifiée avec success',
+  })
+  @ApiBadRequestResponse({
+    description: 'Une erreur est survenue réessayer plus tard',
+  })
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'agencyLogo', maxCount: 1 }]))
+  async updateAgency(
+    @Body() data: updateAgencyDto,
+    @UploadedFiles()
+    files: {
+      agencyLogo?: Express.Multer.File[];
+    },
+  ) {
+    let cloudinaryAgencyLogoFileUrl: string = '';
+
+    if (files?.agencyLogo?.length) {
+      const uploadAgencyLogo = await this.uploadFileService.uploadAgencyImage(
+        files.agencyLogo[0],
+        data.name,
+      );
+      cloudinaryAgencyLogoFileUrl = uploadAgencyLogo.secure_url;
+    }
+
+    return this.agencyService.updateAgency({
+      ...data,
+      agencyLogo: cloudinaryAgencyLogoFileUrl,
+    });
+  }
+
+  @ApiBearerAuth()
+  @Post(API_URL.AGENCY.CLOSE_AGENCY)
+  @ApiOperation({ summary: 'Fermée votre agence' })
+  @ApiOkResponse({
+    description: 'Agence fermée avec success',
+  })
+  @ApiBadRequestResponse({
+    description: 'Une erreur est survenue réessayer plus tard',
+  })
+  async closeAgency(
+    @Query('agencyId') agencyId: string,
+    @Query('ownerId') ownerId: string,
+  ) {
+    return this.agencyService.closeAgency({ agencyId, ownerId });
+  }
+
   @Post(API_URL.AGENCY.CHECK_NAME)
   @ApiOperation({
     summary: 'Verifier si une agence portant ce nom existe deja',

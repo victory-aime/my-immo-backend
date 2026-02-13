@@ -18,10 +18,19 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({
       where: uniqueWhere,
       include: {
-        accounts: true,
+        accounts: {
+          select: {
+            providerId: true,
+          },
+        },
         propertyOwner: {
-          include: {
-            propertyAgency: true,
+          select: {
+            id: true,
+            propertyAgency: {
+              select: {
+                id: true,
+              },
+            },
           },
         },
       },
