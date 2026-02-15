@@ -9,5 +9,6 @@ import { CloudinaryModule } from '_root/modules/cloudinary/cloudinary.module';
   imports: [UsersModule, DatabaseModule, CloudinaryModule],
   controllers: [AgencyController],
   providers: [AgencyService],
+  exports: [AgencyService],
 })
 export class AgencyModule {}

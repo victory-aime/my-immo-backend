@@ -17,6 +17,7 @@ import { EmailModule } from '_root/modules/mail/mail.module';
 import { formatExpiresIn } from '_root/modules/mail/utils/getExpiresTime';
 import { EXPIRE_TIME } from '_root/config/enum';
 import { AgencyModule } from '_root/modules/agency/agency.module';
+import { PropertyModule } from '_root/modules/property/property.module';
 
 @Module({
   imports: [
@@ -129,6 +130,7 @@ import { AgencyModule } from '_root/modules/agency/agency.module';
     }),
     UsersModule,
     AgencyModule,
+    PropertyModule,
   ],
   providers: [
     {

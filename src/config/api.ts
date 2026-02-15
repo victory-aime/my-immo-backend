@@ -17,6 +17,13 @@ export const API_URL = {
     CLOSE_AGENCY: `${BASE_APIS_URL.SECURED}/agency/close`,
     CHECK_NAME: `${BASE_APIS_URL.UNSECURED}/agency/verified-name`,
   },
+  PROPERTY: {
+    CREATE_PROPERTY: `${BASE_APIS_URL.SECURED}/property/create`,
+    ALL_PROPERTIES: `${BASE_APIS_URL.SECURED}/property/all`,
+    PROPERTY_INFO: `${BASE_APIS_URL.SECURED}/property`,
+    UPDATE_PROPERTY: `${BASE_APIS_URL.SECURED}/property/update`,
+    CLOSE_PROPERTY: `${BASE_APIS_URL.SECURED}/property/close`,
+  },
   USER: {
     INFO: `${BASE_APIS_URL.SECURED}/user/info`,
     SESSION: `${BASE_APIS_URL.SECURED}/user/session`,
