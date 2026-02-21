@@ -21,6 +21,7 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from '_root/modules/cloudinary/uploads.service';
 import { AgencyService } from '_root/modules/agency/agency.service';
 import { convertToInteger } from '_root/config/convert';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
 @Controller()
 @ApiBearerAuth()
@@ -44,6 +45,24 @@ export class PropertyController {
     return properties?.map((property) => ({
       ...property,
       price: property.price.toNumber(),
+    }));
+  }
+
+  @Get(API_URL.PROPERTY.ALL_PROPERTIES_PUBLIC)
+  @AllowAnonymous()
+  @ApiOperation({ summary: 'Récupérer toutes les propriétés' })
+  @ApiOkResponse({
+    description: 'Liste des propriétés récupérée avec success',
+  })
+  @ApiBadRequestResponse({
+    description: 'Une erreur est survenue réessayer plus tard',
+  })
+  async publicProperties() {
+    const properties = await this.propertyService.getAllPublicProperties();
+    return properties?.map((property) => ({
+      ...property,
+      price: property.price.toNumber(),
+      locationCaution: property.locationCaution?.toNumber(),
     }));
   }
 
@@ -87,6 +106,9 @@ export class PropertyController {
       price: convertToInteger(data?.price),
       rooms: convertToInteger(data?.rooms),
       surface: convertToInteger(data?.surface),
+      sdb: convertToInteger(data?.sdb),
+      locationCaution: convertToInteger(data?.locationCaution),
+      postalCode: convertToInteger(data?.postalCode),
       galleryImages: cloudinaryGalleryFilesUrl,
     });
   }

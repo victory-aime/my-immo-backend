@@ -4,7 +4,6 @@ import { API_URL } from '_root/config/api';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
-  ApiBody,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -38,31 +37,6 @@ export class UsersController {
   @ApiNotFoundResponse({ description: 'Utilisateur introuvable.' })
   async getUserInfo(@Query('userId') userId: string) {
     return this.userService.userInfo(userId);
-  }
-
-  @ApiBearerAuth()
-  @Post(API_URL.USER.REGENERATE_PASSWORD)
-  @ApiOperation({ summary: 'Régénérer le mot de passe utilisateur' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        email: {
-          type: 'string',
-          example: 'victory@gmail.com',
-        },
-        password: {
-          type: 'string',
-          example: 'P@ssw0rd!',
-        },
-      },
-      required: ['email', 'password'],
-    },
-  })
-  @ApiOkResponse({ description: 'Mot de passe mis à jour avec succès.' })
-  @ApiBadRequestResponse({ description: 'Email ou mot de passe invalide.' })
-  async regeneratePassword(@Body() data: { email: string; password: string }) {
-    return this.userService.regeneratePassword(data.email, data.password);
   }
 
   @Get(API_URL.USER.SESSION)

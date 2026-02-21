@@ -137,21 +137,26 @@ model PropertyAgency {
 // =======================
 
 model Property {
-  id               String         @id @default(uuid())
+  id               String       @id @default(uuid())
   propertyAgenceId String
   title            String
   galleryImages    String[]
   description      String
   type             PropertyType
-  price            Decimal        @db.Decimal(10, 2)
+  price            Decimal      @db.Decimal(10, 2)
   surface          Int
   rooms            Int
   address          String
   city             String
   country          String
-  status           PropertyStatus @default(AVAILABLE)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+
+  postalCode      Int?
+  sdb             Int?
+  locationCaution Decimal? @db.Decimal(10, 2)
+
+  status    PropertyStatus @default(AVAILABLE)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 
   rentalRequests RentalRequest[]
   conversations  Conversation[]
