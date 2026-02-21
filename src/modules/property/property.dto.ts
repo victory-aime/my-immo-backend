@@ -53,6 +53,24 @@ export class propertyDto {
   price: number;
 
   @ApiProperty({
+    description: 'Caution de la propriété en FCFA',
+    example: 250000,
+  })
+  locationCaution: number;
+
+  @ApiProperty({
+    description: 'Nombre de salle de bain',
+    example: 4,
+  })
+  sdb: number;
+
+  @ApiProperty({
+    description: 'Code postal',
+    example: 4025648,
+  })
+  postalCode: number;
+
+  @ApiProperty({
     description: 'Surface de la propriété en mètres carrés',
     example: 120,
   })

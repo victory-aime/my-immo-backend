@@ -1,9 +1,7 @@
 import {
-  ConflictException,
   HttpException,
   HttpStatus,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
@@ -24,6 +22,23 @@ export class PropertyService {
       throw new NotFoundException('Aucune propriété trouvée pour cette agence');
     }
     return allProperties;
+  }
+
+  async getAllPublicProperties() {
+    return this.prismaService.property.findMany({
+      where: {
+        status: 'AVAILABLE',
+      },
+      include: {
+        propertyAgency: {
+          select: {
+            name: true,
+            phone: true,
+            isApprove: true,
+          },
+        },
+      },
+    });
   }
 
   async createProperty(data: propertyDto): Promise<{ message: string }> {

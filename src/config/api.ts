@@ -20,6 +20,7 @@ export const API_URL = {
   PROPERTY: {
     CREATE_PROPERTY: `${BASE_APIS_URL.SECURED}/property/create`,
     ALL_PROPERTIES: `${BASE_APIS_URL.SECURED}/property/all`,
+    ALL_PROPERTIES_PUBLIC: `${BASE_APIS_URL.UNSECURED}/property`,
     PROPERTY_INFO: `${BASE_APIS_URL.SECURED}/property`,
     UPDATE_PROPERTY: `${BASE_APIS_URL.SECURED}/property/update`,
     CLOSE_PROPERTY: `${BASE_APIS_URL.SECURED}/property/close`,
