@@ -10,6 +10,12 @@ export const API_URL = {
     FORGOT_PASSWORD: `${BASE_APIS_URL.UNSECURED}/auth/forgot-password`,
     RESET_PASSWORD: `${BASE_APIS_URL.SECURED}/auth/reset-password`,
   },
+  CONTACT: {
+    PUBLIC_REQUEST: `${BASE_APIS_URL.UNSECURED}/contact/public-request`,
+    AGENCY_REQUEST_LIST: `${BASE_APIS_URL.SECURED}/request/list`,
+    CHANGE_REQUEST_STATUS: `${BASE_APIS_URL.SECURED}/request/status`,
+    READ_ALL_REQUESTS: `${BASE_APIS_URL.SECURED}/request/read-all`,
+  },
   AGENCY: {
     CREATE_AGENCY: `${BASE_APIS_URL.SECURED}/agency/create`,
     AGENCY_INFO: `${BASE_APIS_URL.SECURED}/agency`,
@@ -34,11 +40,6 @@ export const API_URL = {
   COMMON: {
     INVOICE: {
       GENERATE: `${BASE_APIS_URL.SECURED}/invoice/generate`,
-    },
-    OTP: {
-      GLOBAL_ROUTES: `${BASE_APIS_URL.UNSECURED}/otp`,
-      GENERATE: 'generate',
-      VALIDATE: 'validate',
     },
     FAQ: {
       GLOBAL_ROUTE: `${BASE_APIS_URL.SECURED}/faq`,

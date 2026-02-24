@@ -6,6 +6,9 @@ enum BASE_APIS_URL {
 
 enum CLOUDINARY_FOLDER_NAME {
   AGENCY = 'agency',
+  LOGO = 'logo',
+  DOC = 'documents',
+  PROPERTY = 'properties',
   USERS = 'USERS',
 }
 

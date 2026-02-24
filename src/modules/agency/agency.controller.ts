@@ -19,6 +19,7 @@ import { createAgencyOwnerDto, updateAgencyDto } from './agency.dto';
 import { AgencyService } from './agency.service';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from '_root/modules/cloudinary/uploads.service';
+import { CLOUDINARY_FOLDER_NAME } from '_root/config/enum';
 
 @Controller()
 export class AgencyController {
@@ -73,6 +74,7 @@ export class AgencyController {
       const uploadAgencyLogo = await this.uploadFileService.uploadAgencyImage(
         files.agencyLogo[0],
         data.name,
+        CLOUDINARY_FOLDER_NAME.LOGO,
       );
       cloudinaryAgencyLogoFileUrl = uploadAgencyLogo.secure_url;
     }
@@ -81,6 +83,7 @@ export class AgencyController {
         const uploadDocument = await this.uploadFileService.uploadAgencyImage(
           document,
           data.name,
+          CLOUDINARY_FOLDER_NAME.DOC,
         );
         cloudinaryDocumentsFileUrl.push(uploadDocument.secure_url);
       }
@@ -118,6 +121,7 @@ export class AgencyController {
       const uploadAgencyLogo = await this.uploadFileService.uploadAgencyImage(
         files.agencyLogo[0],
         data.name,
+        CLOUDINARY_FOLDER_NAME.LOGO,
       );
       cloudinaryAgencyLogoFileUrl = uploadAgencyLogo.secure_url;
     }

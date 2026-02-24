@@ -22,6 +22,7 @@ import { UploadsService } from '_root/modules/cloudinary/uploads.service';
 import { AgencyService } from '_root/modules/agency/agency.service';
 import { convertToInteger } from '_root/config/convert';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { CLOUDINARY_FOLDER_NAME } from '_root/config/enum';
 
 @Controller()
 @ApiBearerAuth()
@@ -96,6 +97,7 @@ export class PropertyController {
         const uploadDocument = await this.uploadFileService.uploadAgencyImage(
           gallery,
           getAgencyName?.name,
+          CLOUDINARY_FOLDER_NAME.PROPERTY,
         );
         cloudinaryGalleryFilesUrl.push(uploadDocument.secure_url);
       }

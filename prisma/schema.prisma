@@ -25,15 +25,16 @@ model User {
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
-  sessions      Session[]
-  accounts      Account[]
-  twoFactor     TwoFactor[]
-  propertyOwner PropertyOwner?
-  message       Message[]
-  favorite      Favorite[]
-  report        Report[]
-  notification  Notification[]
-  RentalRequest RentalRequest[]
+  sessions       Session[]
+  accounts       Account[]
+  twoFactor      TwoFactor[]
+  propertyOwner  PropertyOwner?
+  message        Message[]
+  favorite       Favorite[]
+  report         Report[]
+  notification   Notification[]
+  RentalRequest  RentalRequest[]
+  contactRequest PublicContact[]
 
   @@map("user")
 }
@@ -116,20 +117,21 @@ model PropertyOwner {
 }
 
 model PropertyAgency {
-  id          String               @id @default(uuid())
-  name        String               @unique
-  description String
-  address     String
-  phone       String
-  agencyLogo  String
-  isApprove   Boolean              @default(false)
-  status      PropertyAgencyStatus @default(PENDING)
-  documents   String[]
-  acceptTerms Boolean              @default(false)
-  rating      Float?
-  ownerId     String               @unique
-  owner       PropertyOwner        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  properties  Property[]
+  id            String               @id @default(uuid())
+  name          String               @unique
+  description   String
+  address       String
+  phone         String
+  agencyLogo    String
+  isApprove     Boolean              @default(false)
+  status        PropertyAgencyStatus @default(PENDING)
+  documents     String[]
+  acceptTerms   Boolean              @default(false)
+  rating        Float?
+  ownerId       String               @unique
+  owner         PropertyOwner        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  properties    Property[]
+  publicContact PublicContact[]
 }
 
 // =======================
@@ -162,6 +164,7 @@ model Property {
   conversations  Conversation[]
   favorites      Favorite[]
   reports        Report[]
+  publicContact  PublicContact[]
   propertyAgency PropertyAgency? @relation(fields: [propertyAgenceId], references: [id], onDelete: Cascade)
 
   @@unique([propertyAgenceId, title])
@@ -177,6 +180,7 @@ model RentalRequest {
   id         String              @id @default(uuid())
   propertyId String
   tenantId   String
+  phone      String?
   message    String?
   status     RentalRequestStatus @default(PENDING)
   createdAt  DateTime            @default(now())
@@ -219,6 +223,31 @@ model Message {
   @@index([conversationId])
   @@index([senderId])
   @@map("message")
+}
+
+model PublicContact {
+  id String @id @default(uuid())
+
+  fullName   String
+  email      String
+  phone      String
+  subject    String
+  message    String
+  status     ContactStatus @default(PENDING)
+  propertyId String
+  agencyId   String
+  userId     String?
+
+  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  property       Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyAgency PropertyAgency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([propertyId])
+  @@unique([email, propertyId])
+  @@map("public_contact")
 }
 
 // =======================
@@ -283,6 +312,12 @@ enum PropertyType {
   APARTMENT
   HOUSE
   STUDIO
+}
+
+enum ContactStatus {
+  PENDING
+  READ
+  REPLIED
 }
 
 enum PropertyAgencyStatus {
