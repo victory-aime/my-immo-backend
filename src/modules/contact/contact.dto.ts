@@ -39,7 +39,6 @@ export class CreateContactDto {
 
   @IsString()
   @IsOptional()
-  @IsUUID()
   @ApiProperty({
     description: "Identifiant de l'utilisateur",
     example: 'AZ2324EZEdgysz',
@@ -47,7 +46,6 @@ export class CreateContactDto {
   userId: string;
 
   @IsString()
-  @IsUUID()
   @ApiProperty({
     description: 'Identifiant de la propriete',
     example: 'AZ2324EZEdgysz',
@@ -55,7 +53,6 @@ export class CreateContactDto {
   propertyId: string;
 
   @IsString()
-  @IsUUID()
   @ApiProperty({
     description: "Identifiant de l'agence",
     example: 'AZ2324EZEdgysz',

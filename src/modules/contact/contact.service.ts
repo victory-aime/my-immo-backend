@@ -8,11 +8,9 @@ import { CreateContactDto } from './contact.dto';
 export class ContactService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(
-    dto: CreateContactDto,
-    currentUserId?: string,
-  ): Promise<{ message: string }> {
-    const { fullName, email, phone, subject, message, propertyId } = dto;
+  async create(dto: CreateContactDto): Promise<{ message: string }> {
+    const { fullName, email, phone, subject, message, propertyId, userId } =
+      dto;
 
     // 1️⃣ Vérifier que la propriété existe
     const property = await this.prisma.property.findUnique({
@@ -37,11 +35,11 @@ export class ContactService {
     }
 
     // 2️⃣ Vérifier doublon intelligent
-    if (currentUserId) {
+    if (userId) {
       const existingByUser = await this.prisma.publicContact.findFirst({
         where: {
           propertyId,
-          userId: currentUserId,
+          userId,
         },
       });
 
@@ -81,7 +79,7 @@ export class ContactService {
         message,
         propertyId,
         agencyId: property.propertyAgency.id,
-        userId: currentUserId!,
+        userId,
         status: ContactStatus.PENDING,
       },
     });

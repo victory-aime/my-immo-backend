@@ -16,6 +16,11 @@ export const API_URL = {
     CHANGE_REQUEST_STATUS: `${BASE_APIS_URL.SECURED}/request/status`,
     READ_ALL_REQUESTS: `${BASE_APIS_URL.SECURED}/request/read-all`,
   },
+  RENTAL_REQUESTS: {
+    CREATE: `${BASE_APIS_URL.SECURED}/rental/create`,
+    RENTAL_REQUESTS_AGENCY_LIST: `${BASE_APIS_URL.SECURED}/rental/agency-list`,
+    RENTAL_REQUESTS_USER_LIST: `${BASE_APIS_URL.SECURED}/rental/user-list`,
+  },
   AGENCY: {
     CREATE_AGENCY: `${BASE_APIS_URL.SECURED}/agency/create`,
     AGENCY_INFO: `${BASE_APIS_URL.SECURED}/agency`,
