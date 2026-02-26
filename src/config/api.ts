@@ -21,6 +21,11 @@ export const API_URL = {
     RENTAL_REQUESTS_AGENCY_LIST: `${BASE_APIS_URL.SECURED}/rental/agency-list`,
     RENTAL_REQUESTS_USER_LIST: `${BASE_APIS_URL.SECURED}/rental/user-list`,
   },
+  RENTAL_AGREEMENT: {
+    APPROVE: `${BASE_APIS_URL.SECURED}/rental-agreement/approve`,
+    REJECT: `${BASE_APIS_URL.SECURED}/rental-agreement/reject`,
+    CLOSE: `${BASE_APIS_URL.SECURED}/rental-agreement/terminate`,
+  },
   AGENCY: {
     CREATE_AGENCY: `${BASE_APIS_URL.SECURED}/agency/create`,
     AGENCY_INFO: `${BASE_APIS_URL.SECURED}/agency`,

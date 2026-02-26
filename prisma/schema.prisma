@@ -25,16 +25,17 @@ model User {
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
-  sessions       Session[]
-  accounts       Account[]
-  twoFactor      TwoFactor[]
-  propertyOwner  PropertyOwner?
-  message        Message[]
-  favorite       Favorite[]
-  report         Report[]
-  notification   Notification[]
-  RentalRequest  RentalRequest[]
-  contactRequest PublicContact[]
+  sessions        Session[]
+  accounts        Account[]
+  twoFactor       TwoFactor[]
+  propertyOwner   PropertyOwner?
+  message         Message[]
+  favorite        Favorite[]
+  report          Report[]
+  notification    Notification[]
+  RentalRequest   RentalRequest[]
+  contactRequest  PublicContact[]
+  rentalAgreement RentalAgreement[]
 
   @@map("user")
 }
@@ -160,12 +161,13 @@ model Property {
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
-  rentalRequests RentalRequest[]
-  conversations  Conversation[]
-  favorites      Favorite[]
-  reports        Report[]
-  publicContact  PublicContact[]
-  propertyAgency PropertyAgency? @relation(fields: [propertyAgenceId], references: [id], onDelete: Cascade)
+  rentalRequests  RentalRequest[]
+  conversations   Conversation[]
+  favorites       Favorite[]
+  reports         Report[]
+  publicContact   PublicContact[]
+  rentalAgreement RentalAgreement[]
+  propertyAgency  PropertyAgency?   @relation(fields: [propertyAgenceId], references: [id], onDelete: Cascade)
 
   @@unique([propertyAgenceId, title])
   @@index([propertyAgenceId])
@@ -191,6 +193,22 @@ model RentalRequest {
   @@index([propertyId])
   @@index([tenantId])
   @@map("rental_request")
+}
+
+model RentalAgreement {
+  id         String                @id @default(uuid())
+  propertyId String                @unique
+  tenantId   String
+  startDate  DateTime              @default(now())
+  endDate    DateTime?
+  rentAmount Decimal               @db.Decimal(10, 2)
+  status     RentalAgreementStatus @default(ACTIVE)
+  createdAt  DateTime              @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant   User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }
 
 // =======================
@@ -324,6 +342,11 @@ enum PropertyAgencyStatus {
   PENDING
   CLOSE
   OPEN
+}
+
+enum RentalAgreementStatus {
+  ACTIVE
+  TERMINATED
 }
 
 enum PropertyStatus {

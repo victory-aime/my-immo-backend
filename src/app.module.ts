@@ -13,6 +13,7 @@ import { PropertyModule } from '_root/modules/property/property.module';
 import { BetterAuthModule } from '_root/lib/auth.module';
 import { ContactModule } from '_root/modules/contact/contact.module';
 import { RentalModule } from '_root/modules/rental-request/rental.module';
+import { RentalAgreementModule } from '_root/modules/rental-agreement/rental-agreement.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { RentalModule } from '_root/modules/rental-request/rental.module';
     PropertyModule,
     ContactModule,
     RentalModule,
+    RentalAgreementModule,
   ],
   providers: [
     {

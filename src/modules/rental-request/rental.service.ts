@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { RentalDto } from './rental.dto';
+import { HttpError } from '../../config/http.error';
 
 @Injectable()
 export class RentalService {
@@ -64,21 +65,27 @@ export class RentalService {
     });
   }
 
-  async createRentalRequest(data: RentalDto) {
-    // Vérifier propriété
+  async createRentalRequest(data: RentalDto): Promise<{ message: string }> {
     const property = await this.prisma.property.findUnique({
       where: { id: data.propertyId },
     });
 
     if (!property) {
-      throw new Error('Property not found');
+      throw new HttpError(
+        'Propriété introuvable',
+        HttpStatus.NOT_FOUND,
+        'PROPERTY_NOT_FOUND',
+      );
     }
 
     if (property.status !== 'AVAILABLE') {
-      throw new Error('Property not available');
+      throw new HttpError(
+        'Cette propriété n’est pas disponible',
+        HttpStatus.BAD_REQUEST,
+        'PROPERTY_NOT_AVAILABLE',
+      );
     }
 
-    // Vérifier doublon
     const existing = await this.prisma.rentalRequest.findFirst({
       where: {
         propertyId: data.propertyId,
@@ -87,14 +94,22 @@ export class RentalService {
     });
 
     if (existing) {
-      throw new Error('Rental request already exists');
+      throw new HttpError(
+        'Vous avez déjà envoyé une demande pour cette propriété',
+        HttpStatus.CONFLICT,
+        'RENTAL_REQUEST_ALREADY_EXISTS',
+      );
     }
 
-    return this.prisma.rentalRequest.create({
+    await this.prisma.rentalRequest.create({
       data: {
         ...data,
       },
     });
+
+    return {
+      message: `Demande de location créée avec succès.`,
+    };
   }
 
   async updateRentalRequest(
@@ -110,12 +125,19 @@ export class RentalService {
     });
 
     if (!request) {
-      throw new Error('Rental request not found');
+      throw new HttpError(
+        'Demande de location introuvable',
+        HttpStatus.NOT_FOUND,
+        'RENTAL_REQUEST_NOT_FOUND',
+      );
     }
 
-    // Vérifier que la demande appartient bien à l’agence
     if (request.property.propertyAgenceId !== agencyId) {
-      throw new Error('Unauthorized');
+      throw new HttpError(
+        'Accès non autorisé à cette demande',
+        HttpStatus.FORBIDDEN,
+        'UNAUTHORIZED_RENTAL_ACCESS',
+      );
     }
 
     return this.prisma.rentalRequest.update({
