@@ -60,7 +60,6 @@ import { twoFactor } from 'better-auth/plugins';
           emailAndPassword: {
             enabled: true,
             autoSignIn: false,
-            //requireEmailVerification: true,
             revokeSessionsOnPasswordReset: true,
             resetPasswordTokenExpiresIn: EXPIRE_TIME._5_MINUTES,
             sendResetPassword: async ({ user, url }) => {

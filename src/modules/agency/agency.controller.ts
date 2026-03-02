@@ -20,6 +20,7 @@ import { AgencyService } from './agency.service';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from '_root/modules/cloudinary/uploads.service';
 import { CLOUDINARY_FOLDER_NAME } from '_root/config/enum';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
 @Controller()
 export class AgencyController {
@@ -41,6 +42,7 @@ export class AgencyController {
     return this.agencyService.findAgency(agencyId);
   }
 
+  @AllowAnonymous()
   @ApiBearerAuth()
   @Post(API_URL.AGENCY.CREATE_AGENCY)
   @ApiOperation({ summary: 'Créer une agence' })
@@ -53,31 +55,16 @@ export class AgencyController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'agencyLogo', maxCount: 1 },
-      { name: 'documents', maxCount: 5 },
-    ]),
-  )
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'documents', maxCount: 5 }]))
   async createAgency(
     @Body() data: createAgencyOwnerDto,
     @UploadedFiles()
     files: {
-      agencyLogo?: Express.Multer.File[];
       documents?: Express.Multer.File[];
     },
   ) {
-    let cloudinaryAgencyLogoFileUrl: string = '';
     let cloudinaryDocumentsFileUrl: string[] = [];
 
-    if (files?.agencyLogo?.length) {
-      const uploadAgencyLogo = await this.uploadFileService.uploadAgencyImage(
-        files.agencyLogo[0],
-        data.name,
-        CLOUDINARY_FOLDER_NAME.LOGO,
-      );
-      cloudinaryAgencyLogoFileUrl = uploadAgencyLogo.secure_url;
-    }
     if (files?.documents?.length) {
       for (const document of files.documents) {
         const uploadDocument = await this.uploadFileService.uploadAgencyImage(
@@ -90,7 +77,6 @@ export class AgencyController {
     }
     return this.agencyService.createAgency({
       ...data,
-      agencyLogo: cloudinaryAgencyLogoFileUrl,
       documents: cloudinaryDocumentsFileUrl,
     });
   }
@@ -148,6 +134,7 @@ export class AgencyController {
     return this.agencyService.closeAgency({ agencyId, ownerId });
   }
 
+  @AllowAnonymous()
   @Post(API_URL.AGENCY.CHECK_NAME)
   @ApiOperation({
     summary: 'Verifier si une agence portant ce nom existe deja',
