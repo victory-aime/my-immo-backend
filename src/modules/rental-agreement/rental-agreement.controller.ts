@@ -1,4 +1,4 @@
-import { Controller, Post, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -64,5 +64,18 @@ export class RentalAgreementController {
     @Query('agencyId') agencyId: string,
   ) {
     return this.rentalAgreementService.terminateLease(propertyId, agencyId);
+  }
+
+  @Get(API_URL.RENTAL_AGREEMENT.AGENCY_LIST)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lire toutes les demandes' })
+  @ApiOkResponse({
+    description: 'Toutes les demandes ont été lues avec success',
+  })
+  @ApiBadRequestResponse({
+    description: 'Une erreur est survenue réessayer plus tard',
+  })
+  async getRentalAgreementAgencyList(@Query('agencyId') agencyId: string) {
+    return this.rentalAgreementService.getRentalAgreementListByAgency(agencyId);
   }
 }

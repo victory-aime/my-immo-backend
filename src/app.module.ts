@@ -14,6 +14,7 @@ import { BetterAuthModule } from '_root/lib/auth.module';
 import { ContactModule } from '_root/modules/contact/contact.module';
 import { RentalModule } from '_root/modules/rental-request/rental.module';
 import { RentalAgreementModule } from '_root/modules/rental-agreement/rental-agreement.module';
+import { ChatModule } from '_root/modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { RentalAgreementModule } from '_root/modules/rental-agreement/rental-agr
     ContactModule,
     RentalModule,
     RentalAgreementModule,
+    ChatModule,
   ],
   providers: [
     {

@@ -25,6 +25,7 @@ export const API_URL = {
     APPROVE: `${BASE_APIS_URL.SECURED}/rental-agreement/approve`,
     REJECT: `${BASE_APIS_URL.SECURED}/rental-agreement/reject`,
     CLOSE: `${BASE_APIS_URL.SECURED}/rental-agreement/terminate`,
+    AGENCY_LIST: `${BASE_APIS_URL.SECURED}/rental-agreement/rental-agreement-agency-list`,
   },
   AGENCY: {
     CREATE_AGENCY: `${BASE_APIS_URL.SECURED}/agency/create`,
@@ -57,5 +58,12 @@ export const API_URL = {
       UPDATE: `update-faq`,
       DELETE: `delete-faq`,
     },
+  },
+  CHAT: {
+    CREATE_CONV: `${BASE_APIS_URL.SECURED}/chat/create-conversation`,
+    GET_CONV: `${BASE_APIS_URL.SECURED}/chat/get-conversation`,
+    GET_MESSAGE: `${BASE_APIS_URL.SECURED}/chat/get-message`,
+    SEND_MESSAGE: `${BASE_APIS_URL.SECURED}/chat/send-message`,
+    READ_MESSAGE: `${BASE_APIS_URL.SECURED}/chat/read`,
   },
 };

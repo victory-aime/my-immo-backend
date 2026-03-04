@@ -133,6 +133,7 @@ model PropertyAgency {
   owner         PropertyOwner        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   properties    Property[]
   publicContact PublicContact[]
+  notification  Notification[]
 }
 
 // =======================
@@ -205,8 +206,9 @@ model RentalAgreement {
   status     RentalAgreementStatus @default(ACTIVE)
   createdAt  DateTime              @default(now())
 
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant   User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property     Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant       User           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Conversation Conversation[]
 
   @@index([tenantId])
 }
@@ -216,14 +218,17 @@ model RentalAgreement {
 // =======================
 
 model Conversation {
-  id         String   @id @default(uuid())
-  propertyId String
-  createdAt  DateTime @default(now())
+  id                String   @id @default(uuid())
+  propertyId        String
+  rentalAgreementId String?
+  createdAt         DateTime @default(now())
 
-  property Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  messages Message[]
+  property        Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  rentalAgreement RentalAgreement? @relation(fields: [rentalAgreementId], references: [id], onDelete: Cascade)
+  messages        Message[]
 
   @@index([propertyId])
+  @@index([rentalAgreementId])
   @@map("conversation")
 }
 
@@ -312,14 +317,17 @@ model Report {
 model Notification {
   id        String           @id @default(uuid())
   userId    String
+  agencyId  String
   type      NotificationType
-  payload   Json
+  content   String
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyAgency PropertyAgency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([agencyId])
   @@map("notification")
 }
 
@@ -364,6 +372,8 @@ enum RentalRequestStatus {
 enum NotificationType {
   REQUEST
   MESSAGE
+  PAYMENT
+  MAINTENANCE
   SYSTEM
 }
 

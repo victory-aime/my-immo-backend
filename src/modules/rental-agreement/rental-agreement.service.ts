@@ -162,4 +162,31 @@ export class RentalAgreementService {
       };
     });
   }
+
+  async getRentalAgreementListByAgency(agencyId: string) {
+    const rentalAgreements = await this.prisma.rentalAgreement.findMany({
+      where: {
+        property: { propertyAgenceId: agencyId },
+      },
+      include: { tenant: true, property: true },
+    });
+
+    return rentalAgreements.map((data) => ({
+      id: data?.id,
+      tenant: {
+        id: data?.tenantId,
+        name: data?.tenant?.name,
+        email: data?.tenant?.email,
+        image: data?.tenant?.image,
+        status: data?.tenant?.status,
+      },
+      rentAmount: data.rentAmount,
+      property: {
+        title: data?.property?.title,
+      },
+      status: data?.status,
+      startDate: data?.startDate,
+      endDate: data?.endDate,
+    }));
+  }
 }
