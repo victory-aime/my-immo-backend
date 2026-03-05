@@ -15,6 +15,7 @@ import { ContactModule } from '_root/modules/contact/contact.module';
 import { RentalModule } from '_root/modules/rental-request/rental.module';
 import { RentalAgreementModule } from '_root/modules/rental-agreement/rental-agreement.module';
 import { ChatModule } from '_root/modules/chat/chat.module';
+import { NotificationsModule } from '_root/modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ChatModule } from '_root/modules/chat/chat.module';
     RentalModule,
     RentalAgreementModule,
     ChatModule,
+    NotificationsModule,
   ],
   providers: [
     {

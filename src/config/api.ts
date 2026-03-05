@@ -66,4 +66,10 @@ export const API_URL = {
     SEND_MESSAGE: `${BASE_APIS_URL.SECURED}/chat/send-message`,
     READ_MESSAGE: `${BASE_APIS_URL.SECURED}/chat/read`,
   },
+  NOTIFICATION: {
+    GET_ALL: `${BASE_APIS_URL.SECURED}/notif/get-all`,
+    READ_ALL: `${BASE_APIS_URL.SECURED}/notif/read-all`,
+    READ_ONE: `${BASE_APIS_URL.SECURED}/notif/read`,
+    GET_UNREAD_NOTIF: `${BASE_APIS_URL.SECURED}/notif/get-all-unread`,
+  },
 };

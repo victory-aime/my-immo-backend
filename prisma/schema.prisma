@@ -315,18 +315,21 @@ model Report {
 // =======================
 
 model Notification {
-  id        String           @id @default(uuid())
-  userId    String
-  agencyId  String
+  id          String  @id @default(uuid())
+  recipientId String
+  senderId    String?
+
+  agencyId  String?
   type      NotificationType
   content   String
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
 
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  propertyAgency PropertyAgency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  recipient        User            @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  PropertyAgency   PropertyAgency? @relation(fields: [propertyAgencyId], references: [id])
+  propertyAgencyId String?
 
-  @@index([userId])
+  @@index([recipientId])
   @@index([agencyId])
   @@map("notification")
 }

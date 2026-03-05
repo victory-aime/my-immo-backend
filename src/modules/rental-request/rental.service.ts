@@ -2,10 +2,15 @@ import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { RentalDto } from './rental.dto';
 import { HttpError } from '../../config/http.error';
+import { NotificationsService } from '_root/modules/notifications/notifications.service';
+import { NotificationType } from '_prisma/enums';
 
 @Injectable()
 export class RentalService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async getRentalRequestByAgency(agencyId: string) {
     return this.prisma.rentalRequest.findMany({
@@ -66,50 +71,73 @@ export class RentalService {
   }
 
   async createRentalRequest(data: RentalDto): Promise<{ message: string }> {
-    const property = await this.prisma.property.findUnique({
-      where: { id: data.propertyId },
+    return this.prisma.$transaction(async (tx) => {
+      const property = await tx.property.findUnique({
+        where: { id: data.propertyId },
+        include: {
+          propertyAgency: {
+            include: {
+              owner: {
+                select: {
+                  userId: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!property) {
+        throw new HttpError(
+          'Propriété introuvable',
+          HttpStatus.NOT_FOUND,
+          'PROPERTY_NOT_FOUND',
+        );
+      }
+
+      if (property.status !== 'AVAILABLE') {
+        throw new HttpError(
+          'Cette propriété n’est pas disponible',
+          HttpStatus.BAD_REQUEST,
+          'PROPERTY_NOT_AVAILABLE',
+        );
+      }
+
+      const existing = await tx.rentalRequest.findFirst({
+        where: {
+          propertyId: data.propertyId,
+          tenantId: data.tenantId,
+        },
+      });
+
+      if (existing) {
+        throw new HttpError(
+          'Vous avez déjà envoyé une demande pour cette propriété',
+          HttpStatus.CONFLICT,
+          'RENTAL_REQUEST_ALREADY_EXISTS',
+        );
+      }
+
+      const rentalRequest = await tx.rentalRequest.create({
+        data: {
+          ...data,
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          recipientId: property?.propertyAgency?.owner.userId!,
+          senderId: data.tenantId,
+          agencyId: property?.propertyAgency?.id,
+          type: NotificationType.REQUEST,
+          content: 'Nouvelle demande de location',
+        },
+      });
+
+      return {
+        message: `Demande de location créée avec succès.`,
+      };
     });
-
-    if (!property) {
-      throw new HttpError(
-        'Propriété introuvable',
-        HttpStatus.NOT_FOUND,
-        'PROPERTY_NOT_FOUND',
-      );
-    }
-
-    if (property.status !== 'AVAILABLE') {
-      throw new HttpError(
-        'Cette propriété n’est pas disponible',
-        HttpStatus.BAD_REQUEST,
-        'PROPERTY_NOT_AVAILABLE',
-      );
-    }
-
-    const existing = await this.prisma.rentalRequest.findFirst({
-      where: {
-        propertyId: data.propertyId,
-        tenantId: data.tenantId,
-      },
-    });
-
-    if (existing) {
-      throw new HttpError(
-        'Vous avez déjà envoyé une demande pour cette propriété',
-        HttpStatus.CONFLICT,
-        'RENTAL_REQUEST_ALREADY_EXISTS',
-      );
-    }
-
-    await this.prisma.rentalRequest.create({
-      data: {
-        ...data,
-      },
-    });
-
-    return {
-      message: `Demande de location créée avec succès.`,
-    };
   }
 
   async updateRentalRequest(

@@ -3,7 +3,7 @@ import { BASE_APIS_URL } from './enum';
 
 export function setupSwagger(app) {
   const config = new DocumentBuilder()
-    .setTitle('NANA Platform API Documentation')
+    .setTitle('MyIMMO Platform API Documentation')
     .setDescription(
       'Here are classified all the APIs available in the backend and also how to retrieve and access this data',
     )
