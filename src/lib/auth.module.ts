@@ -41,6 +41,7 @@ import { twoFactor } from 'better-auth/plugins';
             autoSignInAfterVerification: true,
             expiresIn: EXPIRE_TIME._30_MINUTES,
             sendVerificationEmail: async ({ user, url }) => {
+              console.log('url', url);
               if (!user.email) {
                 throw new Error('User email is missing');
               }

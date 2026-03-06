@@ -118,7 +118,7 @@ export class RentalService {
         );
       }
 
-      const rentalRequest = await tx.rentalRequest.create({
+      await tx.rentalRequest.create({
         data: {
           ...data,
         },

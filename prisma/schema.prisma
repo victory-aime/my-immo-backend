@@ -184,6 +184,7 @@ model RentalRequest {
   propertyId String
   tenantId   String
   phone      String?
+  startDate  String?
   message    String?
   status     RentalRequestStatus @default(PENDING)
   createdAt  DateTime            @default(now())

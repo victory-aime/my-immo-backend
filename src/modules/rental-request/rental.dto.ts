@@ -16,5 +16,9 @@ export class RentalDto {
 
   @IsString()
   @ApiProperty({})
+  startDate?: string;
+
+  @IsString()
+  @ApiProperty({})
   message?: string;
 }
