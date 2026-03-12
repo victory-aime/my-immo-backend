@@ -1,10 +1,9 @@
 # [1.3.0](https://github.com/victory-aime/my-immo-backend/compare/v1.2.0...v1.3.0) (2026-03-07)
 
-
 ### Features
 
-* **chat:** chat module ([70ee73c](https://github.com/victory-aime/my-immo-backend/commit/70ee73c6a1ce7beca77cf2f55a34df2ef50baa5a))
-* **notification:** notification ([ab698fa](https://github.com/victory-aime/my-immo-backend/commit/ab698fac7edfbce9810c70a84827118f2c306540))
+- **chat:** chat module ([70ee73c](https://github.com/victory-aime/my-immo-backend/commit/70ee73c6a1ce7beca77cf2f55a34df2ef50baa5a))
+- **notification:** notification ([ab698fa](https://github.com/victory-aime/my-immo-backend/commit/ab698fac7edfbce9810c70a84827118f2c306540))
 
 # [1.2.0](https://github.com/victory-aime/my-immo-backend/compare/v1.1.0...v1.2.0) (2026-02-26)
 

@@ -1,6 +1,7 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { HttpError } from '../../config/http.error';
+import { IRentalAgreementResponseDto } from './rental-agreement.dto';
 
 @Injectable()
 export class RentalAgreementService {
@@ -163,30 +164,68 @@ export class RentalAgreementService {
     });
   }
 
-  async getRentalAgreementListByAgency(agencyId: string) {
-    const rentalAgreements = await this.prisma.rentalAgreement.findMany({
-      where: {
-        property: { propertyAgenceId: agencyId },
-      },
-      include: { tenant: true, property: true },
-    });
+  async getRentalAgreementListByAgency(
+    agencyId: string,
+    page?: number,
+    limit?: number,
+  ): Promise<{
+    content: IRentalAgreementResponseDto[];
+    totalDataPerPage: number;
+    currentPage: number;
+    totalItems: number;
+    totalPages: number;
+  }> {
+    const pageInitial = page || 1;
+    const limitPage = limit || 10;
 
-    return rentalAgreements.map((data) => ({
-      id: data?.id,
-      tenant: {
-        id: data?.tenantId,
-        name: data?.tenant?.name,
-        email: data?.tenant?.email,
-        image: data?.tenant?.image,
-        status: data?.tenant?.status,
-      },
-      rentAmount: data.rentAmount,
+    const skip = (pageInitial - 1) * limitPage;
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.rentalAgreement.findMany({
+        where: {
+          property: { propertyAgenceId: agencyId },
+        },
+        include: { tenant: true, property: true },
+
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+
+      this.prisma.rentalAgreement.count({
+        where: {
+          property: { propertyAgenceId: agencyId },
+        },
+      }),
+    ]);
+    const response = data?.map((data) => ({
+      id: data.id,
+      tenant: data.tenant
+        ? {
+            id: data.tenantId,
+            name: data.tenant.name,
+            email: data.tenant.email ?? undefined, // <-- null → undefined
+            image: data.tenant.image ?? undefined, // <-- null → undefined
+            status: data.tenant.status,
+          }
+        : null,
+      rentAmount: data.rentAmount?.toNumber().toString(), // si ton DTO attend string
       property: {
-        title: data?.property?.title,
+        title: data.property?.title,
       },
-      status: data?.status,
-      startDate: data?.startDate,
-      endDate: data?.endDate,
+      status: data.status,
+      startDate: data.startDate.toISOString(),
+      endDate: data.endDate?.toISOString(),
     }));
+
+    return {
+      content: response,
+      totalDataPerPage: limitPage,
+      totalItems: total,
+      currentPage: pageInitial,
+      totalPages: Math.ceil(total / limitPage),
+    };
   }
 }

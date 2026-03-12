@@ -2,44 +2,73 @@ import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { RentalDto } from './rental.dto';
 import { HttpError } from '../../config/http.error';
-import { NotificationsService } from '_root/modules/notifications/notifications.service';
 import { NotificationType } from '_prisma/enums';
+import { RentalRequest } from '_prisma/client';
 
 @Injectable()
 export class RentalService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly notificationsService: NotificationsService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async getRentalRequestByAgency(agencyId: string) {
-    return this.prisma.rentalRequest.findMany({
-      where: {
-        property: {
-          propertyAgenceId: agencyId,
-        },
-      },
-      include: {
-        property: {
-          select: {
-            id: true,
-            title: true,
-            city: true,
-            price: true,
+  async getRentalRequestByAgency(
+    agencyId: string,
+    page: number,
+    limit: number,
+  ): Promise<{
+    content: RentalRequest[];
+    totalDataPerPage: number;
+    currentPage: number;
+    totalItems: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.rentalRequest.findMany({
+        where: {
+          property: {
+            propertyAgenceId: agencyId,
           },
         },
-        tenant: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
+        include: {
+          property: {
+            select: {
+              id: true,
+              title: true,
+              city: true,
+              price: true,
+            },
+          },
+          tenant: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+
+      this.prisma.rentalRequest.count({
+        where: {
+          property: {
+            propertyAgenceId: agencyId,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      content: data,
+      totalDataPerPage: limit,
+      totalItems: total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async getRentalRequestByUser(userId: string) {

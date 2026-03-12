@@ -41,12 +41,15 @@ export class PropertyController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async allProperties(@Query('agencyId') agencyId: string) {
-    const properties = await this.propertyService.getAllProperties(agencyId);
-    return properties?.map((property) => ({
-      ...property,
-      price: property.price.toNumber(),
-    }));
+  async allProperties(
+    @Query('agencyId') agencyId: string,
+    @Query('initialPage') initialPage: number,
+    @Query('limitPerPage') limitPerPage: number,
+  ) {
+    const page = convertToInteger(initialPage) || 1;
+    const limit = convertToInteger(limitPerPage) || 10;
+
+    return this.propertyService.getAllPropertyByAgency(agencyId, page, limit);
   }
 
   @Get(API_URL.PROPERTY.ALL_PROPERTIES_PUBLIC)

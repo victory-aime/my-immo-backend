@@ -1,31 +1,60 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { propertyDto } from '_root/modules/property/property.dto';
 import { HttpError } from '_root/config/http.error';
+import { Property } from '_prisma/client';
 
 @Injectable()
 export class PropertyService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async getAllProperties(agencyId: string) {
-    const allProperties = await this.prismaService.property.findMany({
-      where: {
-        propertyAgenceId: agencyId,
-      },
-    });
-    if (!allProperties) {
-      throw new NotFoundException('Aucune propriété trouvée pour cette agence');
-    }
-    return allProperties;
+  async getAllPropertyByAgency(
+    agencyId: string,
+    page?: number,
+    limit?: number,
+  ): Promise<{
+    content: Property[];
+    totalDataPerPage: number;
+    currentPage: number;
+    totalItems: number;
+    totalPages: number;
+  }> {
+    const pageInitial = page || 1;
+    const limitPage = limit || 10;
+
+    const skip = (pageInitial - 1) * limitPage;
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.property.findMany({
+        where: {
+          propertyAgenceId: agencyId,
+        },
+
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+
+      this.prisma.property.count({
+        where: {
+          propertyAgenceId: agencyId,
+        },
+      }),
+    ]);
+
+    return {
+      content: data,
+      totalDataPerPage: limitPage,
+      totalItems: total,
+      currentPage: pageInitial,
+      totalPages: Math.ceil(total / limitPage),
+    };
   }
 
   async getAllPublicProperties() {
-    return this.prismaService.property.findMany({
+    return this.prisma.property.findMany({
       where: {
         status: 'AVAILABLE',
       },
@@ -43,7 +72,7 @@ export class PropertyService {
 
   async createProperty(data: propertyDto): Promise<{ message: string }> {
     try {
-      const uniqueName = await this.prismaService.property.findUnique({
+      const uniqueName = await this.prisma.property.findUnique({
         where: {
           propertyAgenceId_title: {
             propertyAgenceId: data.propertyAgenceId,
@@ -60,7 +89,7 @@ export class PropertyService {
         );
       }
 
-      await this.prismaService.property.create({
+      await this.prisma.property.create({
         data: {
           ...data,
           propertyAgenceId: data.propertyAgenceId,
@@ -84,7 +113,7 @@ export class PropertyService {
   }
 
   async updateProperty(propertyId: string, data: any) {
-    return this.prismaService.property.update({
+    return this.prisma.property.update({
       where: {
         id: propertyId,
       },

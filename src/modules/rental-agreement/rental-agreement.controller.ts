@@ -8,6 +8,7 @@ import {
 } from '@nestjs/swagger';
 import { API_URL } from '_root/config/api';
 import { RentalAgreementService } from './rental-agreement.service';
+import { convertToInteger } from '_root/config/convert';
 
 @Controller()
 export class RentalAgreementController {
@@ -75,7 +76,17 @@ export class RentalAgreementController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async getRentalAgreementAgencyList(@Query('agencyId') agencyId: string) {
-    return this.rentalAgreementService.getRentalAgreementListByAgency(agencyId);
+  async getRentalAgreementAgencyList(
+    @Query('agencyId') agencyId: string,
+    @Query('initialPage') initialPage: number,
+    @Query('limitPerPage') limitPerPage: number,
+  ) {
+    const page = convertToInteger(initialPage) || 1;
+    const limit = convertToInteger(limitPerPage) || 10;
+    return this.rentalAgreementService.getRentalAgreementListByAgency(
+      agencyId,
+      page,
+      limit,
+    );
   }
 }

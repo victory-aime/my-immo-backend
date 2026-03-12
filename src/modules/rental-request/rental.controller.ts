@@ -9,6 +9,7 @@ import {
 import { API_URL } from '_root/config/api';
 import { RentalService } from './rental.service';
 import { RentalDto } from './rental.dto';
+import { convertToInteger } from '../../config/convert';
 
 @Controller()
 export class RentalController {
@@ -36,8 +37,14 @@ export class RentalController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async agencyRequestList(@Query('agencyId') agencyId: string) {
-    return this.rentalService.getRentalRequestByAgency(agencyId);
+  async agencyRequestList(
+    @Query('agencyId') agencyId: string,
+    @Query('initialPage') initialPage: number,
+    @Query('limitPerPage') limitPerPage: number,
+  ) {
+    const page = convertToInteger(initialPage) || 1;
+    const limit = convertToInteger(limitPerPage) || 10;
+    return this.rentalService.getRentalRequestByAgency(agencyId, page, limit);
   }
 
   @Get(API_URL.RENTAL_REQUESTS.RENTAL_REQUESTS_USER_LIST)
