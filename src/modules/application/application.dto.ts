@@ -1,7 +1,7 @@
 import { IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class RentalDto {
+export class ApplicationDto {
   @IsString()
   @ApiProperty({})
   propertyId: string;

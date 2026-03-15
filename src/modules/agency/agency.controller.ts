@@ -38,8 +38,11 @@ export class AgencyController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async agencyInfo(@Query('agencyId') agencyId: string) {
-    return this.agencyService.findAgency(agencyId);
+  async agencyInfo(
+    @Query('agencyId') agencyId: string,
+    @Query('ownerId') ownerId: string,
+  ) {
+    return this.agencyService.findAgency(agencyId, ownerId);
   }
 
   @AllowAnonymous()

@@ -1,16 +1,21 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
-import { RentalDto } from './rental.dto';
+import { ApplicationDto } from './application.dto';
 import { HttpError } from '../../config/http.error';
 import { NotificationType } from '_prisma/enums';
 import { RentalRequest } from '_prisma/client';
+import { AgencyService } from '_root/modules/agency/agency.service';
 
 @Injectable()
-export class RentalService {
-  constructor(private readonly prisma: PrismaService) {}
+export class ApplicationService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly agencyService: AgencyService,
+  ) {}
 
-  async getRentalRequestByAgency(
+  async getAllApplicationsByAgency(
     agencyId: string,
+    ownerId: string,
     page: number,
     limit: number,
   ): Promise<{
@@ -21,6 +26,7 @@ export class RentalService {
     totalPages: number;
   }> {
     const skip = (page - 1) * limit;
+    await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
 
     const [data, total] = await this.prisma.$transaction([
       this.prisma.rentalRequest.findMany({
@@ -71,7 +77,7 @@ export class RentalService {
     };
   }
 
-  async getRentalRequestByUser(userId: string) {
+  async getAllApplicationsByUser(userId: string) {
     return this.prisma.rentalRequest.findMany({
       where: {
         tenantId: userId,
@@ -99,7 +105,7 @@ export class RentalService {
     });
   }
 
-  async createRentalRequest(data: RentalDto): Promise<{ message: string }> {
+  async createApplication(data: ApplicationDto): Promise<{ message: string }> {
     return this.prisma.$transaction(async (tx) => {
       const property = await tx.property.findUnique({
         where: { id: data.propertyId },
@@ -169,11 +175,13 @@ export class RentalService {
     });
   }
 
-  async updateRentalRequest(
+  async updateApplication(
     requestId: string,
     agencyId: string,
+    ownerId: string,
     status: 'ACCEPTED' | 'REJECTED',
   ) {
+    await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
     const request = await this.prisma.rentalRequest.findUnique({
       where: { id: requestId },
       include: {

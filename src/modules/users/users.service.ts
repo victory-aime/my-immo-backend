@@ -1,17 +1,12 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findUser(where: { id?: string; email?: string; phoneNumber?: string }) {
-    if (!where.id && !where.email && !where.phoneNumber) return null;
+  async findUser(where: { id?: string; email?: string }) {
+    if (!where.id && !where.email) return null;
 
     const uniqueWhere = where.id ? { id: where.id } : { email: where.email };
 

@@ -28,10 +28,12 @@ export class RentalAgreementController {
   async approveRentalAgreement(
     @Query('requestId') requestId: string,
     @Query('agencyId') agencyId: string,
+    @Query('ownerId') ownerId: string,
   ) {
     return this.rentalAgreementService.approveRentalRequest(
       requestId,
       agencyId,
+      ownerId,
     );
   }
 
@@ -47,8 +49,13 @@ export class RentalAgreementController {
   async rejectRentalAgreement(
     @Query('requestId') requestId: string,
     @Query('agencyId') agencyId: string,
+    @Query('ownerId') ownerId: string,
   ) {
-    return this.rentalAgreementService.rejectRentalRequest(requestId, agencyId);
+    return this.rentalAgreementService.rejectRentalRequest(
+      requestId,
+      agencyId,
+      ownerId,
+    );
   }
 
   @Post(API_URL.RENTAL_AGREEMENT.CLOSE)
@@ -63,8 +70,13 @@ export class RentalAgreementController {
   async terminateLease(
     @Query('propertyId') propertyId: string,
     @Query('agencyId') agencyId: string,
+    @Query('ownerId') ownerId: string,
   ) {
-    return this.rentalAgreementService.terminateLease(propertyId, agencyId);
+    return this.rentalAgreementService.terminateLease(
+      propertyId,
+      agencyId,
+      ownerId,
+    );
   }
 
   @Get(API_URL.RENTAL_AGREEMENT.AGENCY_LIST)
@@ -78,6 +90,7 @@ export class RentalAgreementController {
   })
   async getRentalAgreementAgencyList(
     @Query('agencyId') agencyId: string,
+    @Query('ownerId') ownerId: string,
     @Query('initialPage') initialPage: number,
     @Query('limitPerPage') limitPerPage: number,
   ) {
@@ -85,6 +98,7 @@ export class RentalAgreementController {
     const limit = convertToInteger(limitPerPage) || 10;
     return this.rentalAgreementService.getRentalAgreementListByAgency(
       agencyId,
+      ownerId,
       page,
       limit,
     );

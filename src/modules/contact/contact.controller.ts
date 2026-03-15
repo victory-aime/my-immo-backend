@@ -16,7 +16,7 @@ export class ContactController {
   constructor(private readonly contactService: ContactService) {}
 
   @AllowAnonymous()
-  @Post(API_URL.CONTACT.PUBLIC_REQUEST)
+  @Post(API_URL.CONTACT.PUBLIC_CONTACT)
   @ApiBody({ type: CreateContactDto })
   @ApiOperation({ summary: 'Contactez une agence' })
   @ApiOkResponse({
@@ -29,7 +29,7 @@ export class ContactController {
     return this.contactService.create(data);
   }
 
-  @Get(API_URL.CONTACT.AGENCY_REQUEST_LIST)
+  @Get(API_URL.CONTACT.AGENCY_CONTACT_LIST)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Récupérer la liste des demandes' })
   @ApiOkResponse({
@@ -38,11 +38,14 @@ export class ContactController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async agencyRequestList(@Query('agencyId') agencyId: string) {
-    return this.contactService.getAgencyRequest(agencyId);
+  async agencyRequestList(
+    @Query('agencyId') agencyId: string,
+    @Query('ownerId') ownerId: string,
+  ) {
+    return this.contactService.getAgencyContactList(agencyId, ownerId);
   }
 
-  @Post(API_URL.CONTACT.CHANGE_REQUEST_STATUS)
+  @Post(API_URL.CONTACT.AGENCY_CONTACT_UPDATE_STATUS)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mettre a jour une demandes' })
   @ApiOkResponse({
@@ -51,11 +54,19 @@ export class ContactController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async updateRequestStatus(@Query('requestId') requestId: string) {
-    return this.contactService.updateStatus(requestId, 'READ');
+  async updateRequestStatus(
+    @Query('requestId') requestId: string,
+    @Query('agencyId') agencyId: string,
+    @Query('ownerId') ownerId: string,
+  ) {
+    return this.contactService.updateAgencyContactStatus(
+      requestId,
+      agencyId,
+      ownerId,
+    );
   }
 
-  @Post(API_URL.CONTACT.READ_ALL_REQUESTS)
+  @Post(API_URL.CONTACT.AGENCY_CONTACT_READ_ALL)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Lire toutes les demandes' })
   @ApiOkResponse({
@@ -64,7 +75,10 @@ export class ContactController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async readAllRequest(@Query('agencyId') agencyId: string) {
-    return this.contactService.markAllAsRead(agencyId);
+  async readAllRequest(
+    @Query('agencyId') agencyId: string,
+    @Query('ownerId') ownerId: string,
+  ) {
+    return this.contactService.markAllAsRead(agencyId, ownerId);
   }
 }

@@ -7,16 +7,16 @@ import {
   ApiOperation,
 } from '@nestjs/swagger';
 import { API_URL } from '_root/config/api';
-import { RentalService } from './rental.service';
-import { RentalDto } from './rental.dto';
+import { ApplicationService } from './application.service';
+import { ApplicationDto } from './application.dto';
 import { convertToInteger } from '../../config/convert';
 
 @Controller()
-export class RentalController {
-  constructor(private readonly rentalService: RentalService) {}
+export class ApplicationController {
+  constructor(private readonly rentalService: ApplicationService) {}
 
-  @Post(API_URL.RENTAL_REQUESTS.CREATE)
-  @ApiBody({ type: RentalDto })
+  @Post(API_URL.APPLICATION.CREATE)
+  @ApiBody({ type: ApplicationDto })
   @ApiOperation({ summary: 'Demande de location' })
   @ApiOkResponse({
     description: 'Demande de location envoyée avec success',
@@ -24,11 +24,11 @@ export class RentalController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async rentalRequest(@Body() data: RentalDto) {
-    return this.rentalService.createRentalRequest(data);
+  async createApplication(@Body() data: ApplicationDto) {
+    return this.rentalService.createApplication(data);
   }
 
-  @Get(API_URL.RENTAL_REQUESTS.RENTAL_REQUESTS_AGENCY_LIST)
+  @Get(API_URL.APPLICATION.AGENCY_APPLICATION_LIST)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Récupérer la liste des demandes' })
   @ApiOkResponse({
@@ -39,15 +39,21 @@ export class RentalController {
   })
   async agencyRequestList(
     @Query('agencyId') agencyId: string,
+    @Query('ownerId') ownerId: string,
     @Query('initialPage') initialPage: number,
     @Query('limitPerPage') limitPerPage: number,
   ) {
     const page = convertToInteger(initialPage) || 1;
     const limit = convertToInteger(limitPerPage) || 10;
-    return this.rentalService.getRentalRequestByAgency(agencyId, page, limit);
+    return this.rentalService.getAllApplicationsByAgency(
+      agencyId,
+      ownerId,
+      page,
+      limit,
+    );
   }
 
-  @Get(API_URL.RENTAL_REQUESTS.RENTAL_REQUESTS_USER_LIST)
+  @Get(API_URL.APPLICATION.USER_APPLICATION_LIST)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Lire toutes les demandes' })
   @ApiOkResponse({
@@ -56,7 +62,7 @@ export class RentalController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async readAllRequest(@Query('userId') userId: string) {
-    return this.rentalService.getRentalRequestByUser(userId);
+  async getAllUserApplications(@Query('userId') userId: string) {
+    return this.rentalService.getAllApplicationsByUser(userId);
   }
 }

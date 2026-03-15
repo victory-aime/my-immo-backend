@@ -33,7 +33,7 @@ export class PropertyController {
     private readonly agencyService: AgencyService,
   ) {}
 
-  @Get(API_URL.PROPERTY.ALL_PROPERTIES)
+  @Get(API_URL.PROPERTY.ALL_PROPERTIES_BY_AGENCY)
   @ApiOperation({ summary: 'Récupérer toutes les propriétés' })
   @ApiOkResponse({
     description: 'Liste des propriétés récupérée avec success',
@@ -43,13 +43,19 @@ export class PropertyController {
   })
   async allProperties(
     @Query('agencyId') agencyId: string,
+    @Query('ownerId') ownerId: string,
     @Query('initialPage') initialPage: number,
     @Query('limitPerPage') limitPerPage: number,
   ) {
     const page = convertToInteger(initialPage) || 1;
     const limit = convertToInteger(limitPerPage) || 10;
 
-    return this.propertyService.getAllPropertyByAgency(agencyId, page, limit);
+    return this.propertyService.getAllPropertyByAgency(
+      ownerId,
+      agencyId,
+      page,
+      limit,
+    );
   }
 
   @Get(API_URL.PROPERTY.ALL_PROPERTIES_PUBLIC)
@@ -86,6 +92,7 @@ export class PropertyController {
   )
   async createProperty(
     @Body() data: propertyDto,
+    @Query('ownerId') ownerId: string,
     @UploadedFiles()
     files: {
       galleryImages?: Express.Multer.File[];
@@ -94,6 +101,7 @@ export class PropertyController {
     let cloudinaryGalleryFilesUrl: string[] = [];
     const getAgencyName = await this.agencyService.findAgency(
       data?.propertyAgenceId,
+      ownerId,
     );
     if (files?.galleryImages?.length) {
       for (const gallery of files.galleryImages) {
@@ -106,7 +114,7 @@ export class PropertyController {
       }
     }
 
-    return this.propertyService.createProperty({
+    return this.propertyService.createProperty(ownerId, {
       ...data,
       price: convertToInteger(data?.price),
       rooms: convertToInteger(data?.rooms),
@@ -116,5 +124,90 @@ export class PropertyController {
       postalCode: convertToInteger(data?.postalCode),
       galleryImages: cloudinaryGalleryFilesUrl,
     });
+  }
+
+  @Post(API_URL.PROPERTY.UPDATE_PROPERTY)
+  @ApiOperation({ summary: 'Mettre a jour une propriété' })
+  @ApiBody({
+    type: propertyDto,
+  })
+  @ApiOkResponse({
+    description: 'Propriété mise a jour avec success',
+  })
+  @ApiBadRequestResponse({
+    description: 'Une erreur est survenue réessayer plus tard',
+  })
+  @UseInterceptors(
+    FileFieldsInterceptor([{ name: 'galleryImages', maxCount: 4 }]),
+  )
+  async updateProperty(
+    @Body() data: propertyDto,
+    @Query('ownerId') ownerId: string,
+    @Query('appartId') appartId: string,
+    @UploadedFiles()
+    files: {
+      galleryImages?: Express.Multer.File[];
+    },
+  ) {
+    let cloudinaryGalleryFilesUrl: string[] = [];
+    const getAgencyName = await this.agencyService.findAgency(
+      data?.propertyAgenceId,
+      ownerId,
+    );
+    if (files?.galleryImages?.length) {
+      for (const gallery of files.galleryImages) {
+        const uploadFiles = await this.uploadFileService.uploadAgencyImage(
+          gallery,
+          getAgencyName?.name,
+          CLOUDINARY_FOLDER_NAME.PROPERTY,
+        );
+        cloudinaryGalleryFilesUrl.push(uploadFiles.secure_url);
+      }
+    }
+
+    return this.propertyService.updateProperty(ownerId, appartId, {
+      ...data,
+      price: convertToInteger(data?.price),
+      rooms: convertToInteger(data?.rooms),
+      surface: convertToInteger(data?.surface),
+      sdb: convertToInteger(data?.sdb),
+      locationCaution: convertToInteger(data?.locationCaution),
+      postalCode: convertToInteger(data?.postalCode),
+      galleryImages: cloudinaryGalleryFilesUrl,
+    });
+  }
+
+  @Get(API_URL.PROPERTY.OCCUPATION_RATE_BY_PROPERTY_TYPE)
+  @ApiOperation({
+    summary: "Récupérer le taux d'occupation par type de propriété",
+  })
+  @ApiOkResponse({
+    description: 'Stats envoyée avec success',
+  })
+  @ApiBadRequestResponse({
+    description: 'Une erreur est survenue réessayer plus tard',
+  })
+  async getOccupationRate(
+    @Query('ownerId') ownerId: string,
+    @Query('agencyId') agencyId: string,
+  ) {
+    return this.propertyService.getOccupationRateByType(ownerId, agencyId);
+  }
+
+  @Get(API_URL.PROPERTY.MONTHLY_REVENUE)
+  @ApiOperation({
+    summary: 'Récupérer les revenues par propriétés actuellement fake API',
+  })
+  @ApiOkResponse({
+    description: 'Stats envoyée avec success',
+  })
+  @ApiBadRequestResponse({
+    description: 'Une erreur est survenue réessayer plus tard',
+  })
+  async monthlyRevenue(
+    @Query('ownerId') ownerId: string,
+    @Query('agencyId') agencyId: string,
+  ) {
+    return this.propertyService.getMonthlyRevenue(ownerId, agencyId);
   }
 }

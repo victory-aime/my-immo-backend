@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -8,6 +9,7 @@ import { PrismaService } from '_root/database/prisma.service';
 import { createAgencyOwnerDto, updateAgencyDto } from './agency.dto';
 import { UserRole, PropertyAgencyStatus } from '_prisma/enums';
 import { UsersService } from '_root/modules/users/users.service';
+import { HttpError } from '_root/config/http.error';
 
 @Injectable()
 export class AgencyService {
@@ -16,7 +18,14 @@ export class AgencyService {
     private readonly userService: UsersService,
   ) {}
 
-  async findAgency(agencyId: string, ownerId?: string) {
+  async findAgency(agencyId: string, ownerId: string) {
+    if (!ownerId || !agencyId) {
+      throw new HttpError(
+        'Certains informations sont manquantes',
+        HttpStatus.BAD_REQUEST,
+        'BAD_REQUEST',
+      );
+    }
     const getAgency = await this.prismaService.propertyAgency.findUnique({
       where: { id: agencyId, ownerId },
     });
@@ -88,7 +97,7 @@ export class AgencyService {
 
   async updateAgency(data: updateAgencyDto): Promise<{ message: string }> {
     try {
-      const getAgency = await this.findAgency(data?.agencyId);
+      const getAgency = await this.findAgency(data?.agencyId, data?.userId);
       await this.prismaService.propertyAgency.update({
         where: { id: getAgency?.id },
         data: {
@@ -99,7 +108,7 @@ export class AgencyService {
           agencyLogo: data?.agencyLogo,
         },
       });
-      return { message: 'yes' };
+      return { message: 'Informations mise a jour' };
     } catch (error) {
       console.log('error', error);
       throw new InternalServerErrorException('', {
@@ -109,7 +118,7 @@ export class AgencyService {
   }
 
   async closeAgency(data: { agencyId: string; ownerId: string }) {
-    const agency = await this.findAgency(data?.agencyId);
+    const agency = await this.findAgency(data?.agencyId, data?.ownerId);
     const getOwner = await this.prismaService.propertyOwner.findUnique({
       where: {
         id: data.ownerId,
@@ -139,5 +148,17 @@ export class AgencyService {
       where: { name },
     });
     return !agencyName;
+  }
+
+  async checkAgencyOwnership(ownerId: string, agencyId: string) {
+    const exists = await this.findAgency(agencyId, ownerId);
+    if (!exists) {
+      throw new HttpError(
+        "Vous n'êtes pas autorisé à accéder à cette agence",
+        HttpStatus.FORBIDDEN,
+        'AGENCY_FORBIDDEN',
+      );
+    }
+    return exists?.id;
   }
 }

@@ -3,10 +3,14 @@ import { PrismaService } from '_root/database/prisma.service';
 import { HttpError } from '_root/config/http.error';
 import { ContactStatus } from '_prisma/enums';
 import { CreateContactDto } from './contact.dto';
+import { AgencyService } from '_root/modules/agency/agency.service';
 
 @Injectable()
 export class ContactService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly agencyService: AgencyService,
+  ) {}
 
   async create(dto: CreateContactDto): Promise<{ message: string }> {
     const { fullName, email, phone, subject, message, propertyId, userId } =
@@ -91,7 +95,8 @@ export class ContactService {
   }
 
   // 🔎 Récupérer les demandes d’une agence (dashboard propriétaire)
-  async getAgencyRequest(agencyId: string) {
+  async getAgencyContactList(agencyId: string, ownerId: string) {
+    await this.agencyService.findAgency(agencyId, ownerId);
     return this.prisma.publicContact.findMany({
       where: { agencyId },
       orderBy: { createdAt: 'desc' },
@@ -108,10 +113,12 @@ export class ContactService {
     });
   }
 
-  async updateStatus(
+  async updateAgencyContactStatus(
     contactId: string,
-    status: ContactStatus,
+    agencyId: string,
+    ownerId: string,
   ): Promise<{ message: string }> {
+    await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
     const contact = await this.prisma.publicContact.findUnique({
       where: { id: contactId },
     });
@@ -132,7 +139,11 @@ export class ContactService {
     return { message: 'Statut mis à jour avec succès.' };
   }
 
-  async markAllAsRead(agencyId: string): Promise<{ message: string }> {
+  async markAllAsRead(
+    agencyId: string,
+    ownerId: string,
+  ): Promise<{ message: string }> {
+    await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
     const result = await this.prisma.publicContact.updateMany({
       where: {
         agencyId,

@@ -2,15 +2,24 @@ import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { HttpError } from '../../config/http.error';
 import { IRentalAgreementResponseDto } from './rental-agreement.dto';
+import { AgencyService } from '_root/modules/agency/agency.service';
 
 @Injectable()
 export class RentalAgreementService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly agencyService: AgencyService,
+  ) {}
 
   /**
    * APPROVE RENTAL REQUEST
    */
-  async approveRentalRequest(requestId: string, agencyId: string) {
+  async approveRentalRequest(
+    requestId: string,
+    agencyId: string,
+    ownerId: string,
+  ) {
+    await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
     return this.prisma.$transaction(async (tx) => {
       const request = await tx.rentalRequest.findUnique({
         where: { id: requestId },
@@ -85,7 +94,12 @@ export class RentalAgreementService {
   /**
    * REJECT RENTAL REQUEST
    */
-  async rejectRentalRequest(requestId: string, agencyId: string) {
+  async rejectRentalRequest(
+    requestId: string,
+    agencyId: string,
+    ownerId: string,
+  ) {
+    await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
     const request = await this.prisma.rentalRequest.findUnique({
       where: { id: requestId },
       include: { property: true },
@@ -126,7 +140,8 @@ export class RentalAgreementService {
   /**
    * TERMINATE LEASE
    */
-  async terminateLease(propertyId: string, agencyId: string) {
+  async terminateLease(propertyId: string, agencyId: string, ownerId: string) {
+    await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
     return this.prisma.$transaction(async (tx) => {
       const lease = await tx.rentalAgreement.findUnique({
         where: { propertyId },
@@ -166,6 +181,7 @@ export class RentalAgreementService {
 
   async getRentalAgreementListByAgency(
     agencyId: string,
+    ownerId: string,
     page?: number,
     limit?: number,
   ): Promise<{
@@ -179,6 +195,8 @@ export class RentalAgreementService {
     const limitPage = limit || 10;
 
     const skip = (pageInitial - 1) * limitPage;
+
+    await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
 
     const [data, total] = await this.prisma.$transaction([
       this.prisma.rentalAgreement.findMany({

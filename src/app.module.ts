@@ -12,7 +12,7 @@ import { AgencyModule } from '_root/modules/agency/agency.module';
 import { PropertyModule } from '_root/modules/property/property.module';
 import { BetterAuthModule } from '_root/lib/auth.module';
 import { ContactModule } from '_root/modules/contact/contact.module';
-import { RentalModule } from '_root/modules/rental-request/rental.module';
+import { ApplicationModule } from '_root/modules/application/application.module';
 import { RentalAgreementModule } from '_root/modules/rental-agreement/rental-agreement.module';
 import { ChatModule } from '_root/modules/chat/chat.module';
 import { NotificationsModule } from '_root/modules/notifications/notifications.module';
@@ -44,7 +44,7 @@ import { NotificationsModule } from '_root/modules/notifications/notifications.m
     AgencyModule,
     PropertyModule,
     ContactModule,
-    RentalModule,
+    ApplicationModule,
     RentalAgreementModule,
     ChatModule,
     NotificationsModule,
