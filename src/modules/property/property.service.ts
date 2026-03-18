@@ -1,9 +1,7 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { propertyDto } from '_root/modules/property/property.dto';
 import { HttpError } from '_root/config/http.error';
-import { Property } from '_prisma/client';
-import { UsersService } from '_root/modules/users/users.service';
 import { AgencyService } from '_root/modules/agency/agency.service';
 
 @Injectable()

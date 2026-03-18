@@ -17,10 +17,14 @@ import {
   Session,
   UserSession,
 } from '@thallesp/nestjs-better-auth';
+import { AuthorizeRoles, MiddlewareGuard } from '_root/guard/middleware.guard';
+import { UserRole } from '../../../prisma/generated/enums';
+import { convertToInteger } from '_root/config/convert';
+import { query } from 'winston';
 
 @ApiBearerAuth()
 @ApiTags(SWAGGER_TAGS.USER_MANAGEMENT)
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, MiddlewareGuard)
 @Controller()
 export class UsersController {
   constructor(private readonly userService: UsersService) {}
@@ -37,6 +41,20 @@ export class UsersController {
   @ApiNotFoundResponse({ description: 'Utilisateur introuvable.' })
   async getUserInfo(@Query('userId') userId: string) {
     return this.userService.userInfo(userId);
+  }
+
+  @Get(API_URL.USER.ALL_USERS)
+  @AuthorizeRoles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Récupérer les informations des utilisateurs' })
+  @ApiOkResponse({ description: 'Informations utilisateurs récupérées.' })
+  @ApiNotFoundResponse({ description: 'Aucun Utilisateur.' })
+  async getAllUsers(
+    @Query('initialPage') initialPage: number,
+    @Query('limitPerPage') limitPerPage: number,
+  ) {
+    const page = convertToInteger(initialPage) || 1;
+    const limit = convertToInteger(limitPerPage) || 10;
+    return this.userService.getAllUsers(page, limit);
   }
 
   @Get(API_URL.USER.SESSION)

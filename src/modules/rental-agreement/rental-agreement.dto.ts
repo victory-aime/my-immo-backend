@@ -1,4 +1,7 @@
-import { RentalAgreementStatus, UserStatus } from '_prisma/enums';
+import {
+  RentalAgreementStatus,
+  UserStatus,
+} from '../../../prisma/generated/enums';
 
 export class IRentalAgreementResponseDto {
   id: string;

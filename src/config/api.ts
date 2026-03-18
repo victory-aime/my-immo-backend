@@ -1,4 +1,4 @@
-import { BASE_APIS_URL } from './enum';
+import { BASE_APIS_URL, APIS_URL_GLOBAL_PATH } from './enum';
 
 export const API_URL = {
   AUTH: {
@@ -45,10 +45,10 @@ export const API_URL = {
     CLOSE_PROPERTY: `${BASE_APIS_URL.SECURED}/property/close`,
   },
   USER: {
-    INFO: `${BASE_APIS_URL.SECURED}/user/info`,
-    SESSION: `${BASE_APIS_URL.SECURED}/user/session`,
-    REGENERATE_PASSWORD: `${BASE_APIS_URL.SECURED}/user/regenerate-password`,
-    CHECK_EMAIL: `${BASE_APIS_URL.UNSECURED}/user/verified-email`,
+    INFO: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.USERS}/info`,
+    ALL_USERS: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.USERS}/get-allUsers`,
+    SESSION: `/${APIS_URL_GLOBAL_PATH.USERS}/session`,
+    CHECK_EMAIL: `${BASE_APIS_URL.UNSECURED}/${APIS_URL_GLOBAL_PATH.USERS}/verified-email`,
   },
   COMMON: {
     INVOICE: {

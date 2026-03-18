@@ -7,7 +7,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { createAgencyOwnerDto, updateAgencyDto } from './agency.dto';
-import { UserRole, PropertyAgencyStatus } from '_prisma/enums';
+import {
+  UserRole,
+  PropertyAgencyStatus,
+} from '../../../prisma/generated/enums';
 import { UsersService } from '_root/modules/users/users.service';
 import { HttpError } from '_root/config/http.error';
 

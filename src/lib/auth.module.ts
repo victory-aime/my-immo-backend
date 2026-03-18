@@ -96,6 +96,7 @@ import { twoFactor } from 'better-auth/plugins';
             process.env.WEB_APP_URL!,
             'http://localhost:3000',
             'http://localhost:5080',
+            'http://localhost:8082',
           ],
         }),
       }),

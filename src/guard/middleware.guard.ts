@@ -6,37 +6,36 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { TokenExtractorService } from '../config/services';
+import { UserSession } from '@thallesp/nestjs-better-auth';
 
 @Injectable()
 export class MiddlewareGuard implements CanActivate {
-  constructor(
-    private readonly reflector: Reflector,
-    private readonly tokenExtractor: TokenExtractorService,
-  ) {}
+  constructor(private reflector: Reflector) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredRoles = this.reflector.get<string[]>(
-      'roles',
-      context.getHandler(),
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
     );
-
-    const request = context.switchToHttp().getRequest();
-    const user = await this.tokenExtractor.extractUserFromRequest(request);
 
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
 
-    const userRoles: string[] = Array.isArray(user.role)
-      ? user.role
-      : [user.role];
+    const request = context.switchToHttp().getRequest();
+    const session = request.session as UserSession;
 
-    const hasRole = requiredRoles.some((r) => userRoles.includes(r));
+    if (!session?.user) {
+      throw new ForbiddenException('No session user found');
+    }
+
+    const userRole: string | string[] = session.user.role!;
+
+    const hasRole = requiredRoles.includes(userRole as string);
 
     if (!hasRole) {
       throw new ForbiddenException(
-        `Accès refusé : rôle requis (${requiredRoles.join(', ')})`,
+        `Access denied. Required roles: ${requiredRoles.join(', ')}`,
       );
     }
 
@@ -44,5 +43,7 @@ export class MiddlewareGuard implements CanActivate {
   }
 }
 
+export const ROLES_KEY = 'roles';
+
 export const AuthorizeRoles = (...roles: string[]) =>
-  SetMetadata('roles', roles);
+  SetMetadata(ROLES_KEY, roles);

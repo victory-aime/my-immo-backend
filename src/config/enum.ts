@@ -4,6 +4,10 @@ enum BASE_APIS_URL {
   SWAGGER = 'v1/bo',
 }
 
+enum APIS_URL_GLOBAL_PATH {
+  USERS = 'users',
+}
+
 enum CLOUDINARY_FOLDER_NAME {
   AGENCY = 'agency',
   LOGO = 'logo',
@@ -14,8 +18,6 @@ enum CLOUDINARY_FOLDER_NAME {
 
 enum SWAGGER_TAGS {
   USER_MANAGEMENT = 'Users management',
-  AUTH_MANAGEMENT = 'Auth management',
-  OTP_MANAGEMENT = 'OTP policy management',
 }
 
 enum APP_ROLES {
@@ -30,13 +32,6 @@ enum TOKEN_EXCEPTION {
   NO_TOKEN = 103,
 }
 
-enum JWT_TIME {
-  _1_DAY = '1d',
-  _2_DAY = '2d',
-  _30_MINUTES = '30m',
-  _15_MINUTES = '15m',
-}
-
 enum EXPIRE_TIME {
   _30_MINUTES = 1800,
   _60_MINUTES = 3600,
@@ -46,10 +41,10 @@ enum EXPIRE_TIME {
 
 export {
   TOKEN_EXCEPTION,
-  JWT_TIME,
   APP_ROLES,
   CLOUDINARY_FOLDER_NAME,
   BASE_APIS_URL,
   SWAGGER_TAGS,
   EXPIRE_TIME,
+  APIS_URL_GLOBAL_PATH,
 };

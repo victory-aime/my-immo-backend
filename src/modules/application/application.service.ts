@@ -2,8 +2,8 @@ import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { ApplicationDto } from './application.dto';
 import { HttpError } from '../../config/http.error';
-import { NotificationType } from '_prisma/enums';
-import { RentalRequest } from '_prisma/client';
+import { NotificationType } from '../../../prisma/generated/enums';
+import { RentalRequest } from '../../../prisma/generated/client';
 import { AgencyService } from '_root/modules/agency/agency.service';
 
 @Injectable()

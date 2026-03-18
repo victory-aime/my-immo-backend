@@ -1,14 +1,12 @@
 # [1.4.0](https://github.com/victory-aime/my-immo-backend/compare/v1.3.0...v1.4.0) (2026-03-15)
 
-
 ### Bug Fixes
 
-* **pagination:** pagination ([0411074](https://github.com/victory-aime/my-immo-backend/commit/041107419ed0387c886da8aa285f7bf06a201753))
-
+- **pagination:** pagination ([0411074](https://github.com/victory-aime/my-immo-backend/commit/041107419ed0387c886da8aa285f7bf06a201753))
 
 ### Features
 
-* **analytics:** analytics and api services ([e4afc70](https://github.com/victory-aime/my-immo-backend/commit/e4afc70eebe79c79e96f794bc2d5e76b254a4707))
+- **analytics:** analytics and api services ([e4afc70](https://github.com/victory-aime/my-immo-backend/commit/e4afc70eebe79c79e96f794bc2d5e76b254a4707))
 
 # [1.3.0](https://github.com/victory-aime/my-immo-backend/compare/v1.2.0...v1.3.0) (2026-03-07)
 

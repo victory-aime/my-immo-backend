@@ -19,8 +19,7 @@
     "noFallthroughCasesInSwitch": false,
 
     "paths": {
-      "_root/*": ["src/*"],
-      "_prisma/*": ["./prisma/generated/*"]
+      "_root/*": ["src/*"]
     }
   }
 }

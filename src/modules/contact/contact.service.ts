@@ -1,7 +1,7 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { HttpError } from '_root/config/http.error';
-import { ContactStatus } from '_prisma/enums';
+import { ContactStatus } from '../../../prisma/generated/enums';
 import { CreateContactDto } from './contact.dto';
 import { AgencyService } from '_root/modules/agency/agency.service';
 

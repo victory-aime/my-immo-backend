@@ -1,4 +1,4 @@
-import { NotificationType } from '_prisma/enums';
+import { NotificationType } from '../../../prisma/generated/enums';
 
 export class NotificationsDto {
   recipientId: string;
