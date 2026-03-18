@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/victory-aime/my-immo-backend/compare/v1.4.0...v1.4.1) (2026-03-18)
+
+
+### Bug Fixes
+
+* **uat-bug:** uat-bug ([adfcc54](https://github.com/victory-aime/my-immo-backend/commit/adfcc54789a984eb77b9e3b87aee7ba1dbe6ac4c))
+
 # [1.4.0](https://github.com/victory-aime/my-immo-backend/compare/v1.3.0...v1.4.0) (2026-03-15)
 
 ### Bug Fixes
