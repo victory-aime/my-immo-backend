@@ -23,6 +23,7 @@ import { AgencyService } from '_root/modules/agency/agency.service';
 import { convertToInteger } from '_root/config/convert';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { CLOUDINARY_FOLDER_NAME } from '_root/config/enum';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller()
 @ApiBearerAuth()
@@ -32,7 +33,7 @@ export class PropertyController {
     private readonly uploadFileService: UploadsService,
     private readonly agencyService: AgencyService,
   ) {}
-
+  @Throttle({ default: { limit: 3, ttl: 60 } })
   @Get(API_URL.PROPERTY.ALL_PROPERTIES_BY_AGENCY)
   @ApiOperation({ summary: 'Récupérer toutes les propriétés' })
   @ApiOkResponse({
@@ -105,7 +106,7 @@ export class PropertyController {
     );
     if (files?.galleryImages?.length) {
       for (const gallery of files.galleryImages) {
-        const uploadDocument = await this.uploadFileService.uploadAgencyImage(
+        const uploadDocument = await this.uploadFileService.uploadFiles(
           gallery,
           getAgencyName?.name,
           CLOUDINARY_FOLDER_NAME.PROPERTY,
@@ -156,7 +157,7 @@ export class PropertyController {
     );
     if (files?.galleryImages?.length) {
       for (const gallery of files.galleryImages) {
-        const uploadFiles = await this.uploadFileService.uploadAgencyImage(
+        const uploadFiles = await this.uploadFileService.uploadFiles(
           gallery,
           getAgencyName?.name,
           CLOUDINARY_FOLDER_NAME.PROPERTY,

@@ -69,14 +69,17 @@ export class AgencyController {
     let cloudinaryDocumentsFileUrl: string[] = [];
 
     if (files?.documents?.length) {
-      for (const document of files.documents) {
-        const uploadDocument = await this.uploadFileService.uploadAgencyImage(
-          document,
-          data.name,
-          CLOUDINARY_FOLDER_NAME.DOC,
-        );
-        cloudinaryDocumentsFileUrl.push(uploadDocument.secure_url);
-      }
+      const uploads = await Promise.all(
+        files.documents.map((document) =>
+          this.uploadFileService.uploadFiles(
+            document,
+            data.name,
+            CLOUDINARY_FOLDER_NAME.DOC,
+          ),
+        ),
+      );
+
+      cloudinaryDocumentsFileUrl = uploads.map((file) => file.secure_url);
     }
     return this.agencyService.createAgency({
       ...data,
@@ -107,7 +110,7 @@ export class AgencyController {
     let cloudinaryAgencyLogoFileUrl: string = '';
 
     if (files?.agencyLogo?.length) {
-      const uploadAgencyLogo = await this.uploadFileService.uploadAgencyImage(
+      const uploadAgencyLogo = await this.uploadFileService.uploadFiles(
         files.agencyLogo[0],
         data.name,
         CLOUDINARY_FOLDER_NAME.LOGO,

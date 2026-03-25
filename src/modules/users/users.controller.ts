@@ -21,6 +21,7 @@ import { AuthorizeRoles, MiddlewareGuard } from '_root/guard/middleware.guard';
 import { UserRole } from '../../../prisma/generated/enums';
 import { convertToInteger } from '_root/config/convert';
 import { query } from 'winston';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @ApiBearerAuth()
 @ApiTags(SWAGGER_TAGS.USER_MANAGEMENT)
@@ -57,6 +58,15 @@ export class UsersController {
     return this.userService.getAllUsers(page, limit);
   }
 
+  @Get(API_URL.USER.ONE_USER)
+  @AuthorizeRoles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Récupérer les informations de utilisateur' })
+  @ApiOkResponse({ description: 'Informations utilisateur récupérée.' })
+  @ApiNotFoundResponse({ description: 'Aucun Utilisateur.' })
+  async getUserById(@Query('userId') userId: string) {
+    return this.userService.getUserById(userId);
+  }
+
   @Get(API_URL.USER.SESSION)
   @ApiOperation({ summary: 'Récupérer la session utilisateur actuelle' })
   @ApiOkResponse({ description: 'Session utilisateur récupérée avec succès.' })
@@ -64,6 +74,12 @@ export class UsersController {
     return session;
   }
 
+  @AllowAnonymous()
+  @Get('users')
+  @SkipThrottle({ default: false })
+  dontSkip() {
+    return 'List users work with Rate limiting.';
+  }
   @AllowAnonymous()
   @Post(API_URL.USER.CHECK_EMAIL)
   @ApiOperation({ summary: 'Verifier un email' })

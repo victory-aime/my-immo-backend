@@ -13,26 +13,26 @@ export class CloudinaryService {
     });
   }
 
-  async uploadImage(
+  async uploadFile(
     buffer: Buffer,
     filename: string,
     folderPath: string,
+    resourceType: 'image' | 'raw',
   ): Promise<UploadApiResponse> {
     return new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
-          resource_type: 'image',
+          resource_type: resourceType,
           public_id: filename,
           folder: folderPath,
+          access_mode: 'public',
+          format: 'auto',
           overwrite: true,
         },
         (error, result) => {
           if (error) return reject(error);
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error('UploadApiResponse is undefined'));
-          }
+          if (result) resolve(result);
+          else reject(new Error('UploadApiResponse is undefined'));
         },
       );
 

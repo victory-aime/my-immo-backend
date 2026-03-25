@@ -8,6 +8,7 @@ import { betterAuthPrisma } from '_root/lib/auth';
 import { EXPIRE_TIME } from '_root/config/enum';
 import { formatExpiresIn } from '_root/modules/mail/utils/getExpiresTime';
 import { twoFactor } from 'better-auth/plugins';
+import { expo } from '@better-auth/expo';
 
 @Module({
   imports: [
@@ -91,12 +92,17 @@ import { twoFactor } from 'better-auth/plugins';
               issuer: process.env.APP_NAME,
               skipVerificationOnEnable: true,
             }),
+            expo(),
           ],
           trustedOrigins: [
             process.env.WEB_APP_URL!,
             'http://localhost:3000',
             'http://localhost:5080',
             'http://localhost:8082',
+            'exp://',
+            'exp://**',
+            'exp://192.168.*.*:*/**',
+            'http://localhost:8081',
           ],
         }),
       }),

@@ -7,10 +7,13 @@ import { setupSwagger } from './config/swagger';
 import { AuthService } from '@thallesp/nestjs-better-auth';
 import { toNodeHandler } from 'better-auth/node';
 import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
   LoadEnvironmentVariables();
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+  });
 
   // Access Express instance
   const expressApp = app.getHttpAdapter().getInstance();

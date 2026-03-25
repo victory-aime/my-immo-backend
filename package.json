@@ -41,12 +41,14 @@
     ]
   },
   "dependencies": {
+    "@better-auth/expo": "^1.5.6",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/throttler": "^6.5.0",
     "@node-rs/argon2": "^2.0.2",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",

@@ -16,6 +16,7 @@ import { ApplicationModule } from '_root/modules/application/application.module'
 import { RentalAgreementModule } from '_root/modules/rental-agreement/rental-agreement.module';
 import { ChatModule } from '_root/modules/chat/chat.module';
 import { NotificationsModule } from '_root/modules/notifications/notifications.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -39,6 +40,14 @@ import { NotificationsModule } from '_root/modules/notifications/notifications.m
       envFilePath: [`.env.${process.env.NODE_ENV}`],
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 10,
+          limit: 1,
+        },
+      ],
+    }),
     BetterAuthModule,
     UsersModule,
     AgencyModule,
@@ -49,11 +58,10 @@ import { NotificationsModule } from '_root/modules/notifications/notifications.m
     ChatModule,
     NotificationsModule,
   ],
+
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: AuthGuard,
-    },
+    { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}

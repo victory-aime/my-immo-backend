@@ -14,16 +14,25 @@ export class UploadsService {
    * petit suffixe aléatoire
    */
   private generateUniqueFilename(originalName: string): string {
+    const ext = originalName.split('.').pop();
+
     const nameWithoutExt = originalName.split('.').slice(0, -1).join('.');
     const sanitized = nameWithoutExt
       .replace(/\s+/g, '-')
       .replace(/[^a-zA-Z0-9-_]/g, '')
       .toLowerCase();
 
-    return `${sanitized}-${randomUUID()}`;
+    return `${sanitized}-${randomUUID()}.${ext}`;
   }
 
-  async uploadAgencyImage(
+  private getResourceType(mimetype: string): 'image' | 'raw' {
+    if (mimetype.startsWith('image/')) {
+      return 'image';
+    }
+    return 'raw';
+  }
+
+  async uploadFiles(
     file: Express.Multer.File,
     agencyName: string,
     folderName: string,
@@ -36,7 +45,14 @@ export class UploadsService {
     const folderPath = `${CLOUDINARY_FOLDER_NAME.AGENCY}/${agence}/${folderName}`;
     const filename = this.generateUniqueFilename(file.originalname);
 
-    return this.cloudinary.uploadImage(file.buffer, filename, folderPath);
+    const resourceType = this.getResourceType(file.mimetype);
+
+    return this.cloudinary.uploadFile(
+      file.buffer,
+      filename,
+      folderPath,
+      resourceType,
+    );
   }
 
   async uploadUserImage(file: Express.Multer.File, userId: string) {
@@ -47,7 +63,12 @@ export class UploadsService {
     const folderPath = `${CLOUDINARY_FOLDER_NAME.USERS}/${userId}`;
     const filename = this.generateUniqueFilename(file.originalname);
 
-    return this.cloudinary.uploadImage(file.buffer, filename, folderPath);
+    return this.cloudinary.uploadFile(
+      file.buffer,
+      filename,
+      folderPath,
+      'image',
+    );
   }
 
   async deleteUserImage(userId: string): Promise<void> {
