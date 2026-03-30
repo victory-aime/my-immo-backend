@@ -104,4 +104,8 @@ export class UsersService {
     const user = await this.findUser({ email });
     return !!user;
   }
+
+  async getListPassKey() {
+    //await this.better
+  }
 }

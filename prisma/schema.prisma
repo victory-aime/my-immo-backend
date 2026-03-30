@@ -28,6 +28,7 @@ model User {
   sessions        Session[]
   accounts        Account[]
   twoFactor       TwoFactor[]
+  passKey         Passkey[]
   propertyOwner   PropertyOwner?
   message         Message[]
   favorite        Favorite[]
@@ -99,6 +100,23 @@ model TwoFactor {
 
   @@index([userId])
   @@map("twofactor")
+}
+
+model Passkey {
+  id           String    @id
+  name         String?
+  publicKey    String
+  user         User      @relation(fields: [userId], references: [id])
+  userId       String
+  credentialID String
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  createdAt    DateTime? @default(now())
+  aaguid       String?
+
+  @@map("passkey")
 }
 
 // =======================
@@ -338,6 +356,7 @@ model Notification {
 // =======================
 // ENUMS
 // =======================
+
 enum PropertyType {
   APARTMENT
   HOUSE

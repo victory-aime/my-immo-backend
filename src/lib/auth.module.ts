@@ -9,6 +9,7 @@ import { EXPIRE_TIME } from '_root/config/enum';
 import { formatExpiresIn } from '_root/modules/mail/utils/getExpiresTime';
 import { twoFactor } from 'better-auth/plugins';
 import { expo } from '@better-auth/expo';
+import { passkey } from '@better-auth/passkey';
 
 @Module({
   imports: [
@@ -92,6 +93,7 @@ import { expo } from '@better-auth/expo';
               issuer: process.env.APP_NAME,
               skipVerificationOnEnable: true,
             }),
+            passkey(),
             expo(),
           ],
           trustedOrigins: [

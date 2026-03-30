@@ -15,6 +15,7 @@
     "start:debug": "nest start --debug --watch",
     "sync:dev": "dotenv -e .env -- cross-env NODE_ENV=local npx prisma db push",
     "migrate:dev": "dotenv -e .env -- cross-env NODE_ENV=local npx prisma migrate dev --name init_db",
+    "better-auth-generate:dev": "dotenv -e .env -- cross-env NODE_ENV=local pnpm dlx @better-auth/cli generate",
     "generate-client": "npx prisma generate",
     "db:seed:dev": "dotenv -e .env cross-env NODE_ENV=local ts-node prisma/seed/seed.ts",
     "db:seed:dev-admin": "dotenv -e .env cross-env NODE_ENV=local ts-node prisma/seed/seed-admin.ts",
@@ -41,7 +42,9 @@
     ]
   },
   "dependencies": {
+    "@better-auth/core": "1.5.6",
     "@better-auth/expo": "^1.5.6",
+    "@better-auth/passkey": "^1.5.6",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
