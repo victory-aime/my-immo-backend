@@ -19,6 +19,8 @@
     "generate-client": "npx prisma generate",
     "db:seed:dev": "dotenv -e .env cross-env NODE_ENV=local ts-node prisma/seed/seed.ts",
     "db:seed:dev-admin": "dotenv -e .env cross-env NODE_ENV=local ts-node prisma/seed/seed-admin.ts",
+    "db:seed:dev-feature": "dotenv -e .env cross-env NODE_ENV=local ts-node prisma/seed/seed-feature.ts",
+    "prisma-studio": "dotenv -e .env cross-env NODE_ENV=local npx prisma studio --port 7777",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",

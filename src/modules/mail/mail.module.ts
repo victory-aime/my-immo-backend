@@ -3,6 +3,7 @@ import { CompileTemplateService } from './utils/compile-templates';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { AuthMailInitializer } from '_root/modules/mail/mail.initializer';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
       }),
     }),
   ],
-  providers: [EmailService, CompileTemplateService],
+  providers: [EmailService, CompileTemplateService, AuthMailInitializer],
   exports: [EmailService, CompileTemplateService],
 })
 export class EmailModule {}

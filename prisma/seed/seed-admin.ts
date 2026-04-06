@@ -1,17 +1,16 @@
 import { prisma } from './client';
-import { auth } from '../../src/lib/auth';
+import { getAuthInstance } from '../../src/lib/auth';
+
+const auth = getAuthInstance();
 
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Vérifier si l'admin existe déjà
   const existingUser = await prisma.user.findUnique({
     where: { email: 'admin@example.com' },
   });
 
   if (!existingUser) {
-    // Utiliser l'API de Better Auth pour créer l'utilisateur
-    // (gère automatiquement le hachage du mot de passe)
     const { user } = await auth.api.signUpEmail({
       body: {
         name: 'Admin',
@@ -22,24 +21,15 @@ async function main() {
 
     if (user) {
       await prisma.user.update({
-        where: { email: user?.email },
-        data: {
-          role: 'ADMIN',
-        },
+        where: { email: user.email },
+        data: { role: 'SUPER_ADMIN' },
       });
     }
 
     console.log('✅ Default admin user created');
   } else {
-    console.log('⏭️  Admin user already exists, skipping');
+    console.log('⏭️ Admin already exists');
   }
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seed error:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main();

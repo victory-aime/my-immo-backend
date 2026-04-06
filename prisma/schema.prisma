@@ -13,30 +13,33 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─────────────────────────────────────────
+// BETTER-AUTH MODELS
+// ─────────────────────────────────────────
+
 model User {
   id               String     @id @default(uuid())
+  email            String     @unique
   name             String
-  email            String?    @unique
-  image            String?
+  role             Role       @default(USER)
   emailVerified    Boolean    @default(false)
   twoFactorEnabled Boolean?
   status           UserStatus @default(ACTIVE)
-  role             UserRole   @default(USER)
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
-  sessions        Session[]
-  accounts        Account[]
-  twoFactor       TwoFactor[]
-  passKey         Passkey[]
-  propertyOwner   PropertyOwner?
-  message         Message[]
-  favorite        Favorite[]
-  report          Report[]
-  notification    Notification[]
-  RentalRequest   RentalRequest[]
-  contactRequest  PublicContact[]
-  rentalAgreement RentalAgreement[]
+  // Profils métier (1 seul actif selon le role)
+  owner  Owner?
+  staff  Staff?
+  client Client?
+
+  sessions  Session[]
+  accounts  Account[]
+  twoFactor TwoFactor[]
+  passkeys  Passkey[]
+
+  receivedNotifications Notification[] @relation("NotificationRecipient")
+  sentNotifications     Notification[] @relation("NotificationSender") // ✅ FIX: relation nommée
 
   @@map("user")
 }
@@ -119,214 +122,475 @@ model Passkey {
   @@map("passkey")
 }
 
-// =======================
-// PROFILES
-// =======================
+// ─────────────────────────────────────────
+// PROFILS MÉTIER (liés à User)
+// ─────────────────────────────────────────
 
-model PropertyOwner {
-  id             String          @id @default(uuid())
-  userId         String          @unique
-  propertyAgency PropertyAgency?
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Owner {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agency Agency?
+
+  @@map("owner")
+}
+
+model Staff {
+  id         String     @id @default(uuid())
+  userId     String     @unique
+  agencyId   String
+  agencyRole AgencyRole
+  isActive   Boolean    @default(true)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agency     Agency     @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  assignedLeads   Lead[]
+  assignedTickets Ticket[]
+  visits          Visit[]
+  permissions     StaffPermission[]
+
+  createdAt DateTime @default(now())
+
+  @@map("staff")
+}
+
+model Client {
+  id     String  @id @default(uuid())
+  userId String  @unique
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone  String?
+
+  favorites Favorite[]
+  leads     Lead[]
+
+  createdAt DateTime @default(now())
+
+  @@map("client")
+}
+
+// ─────────────────────────────────────────
+// AGENCE
+// ─────────────────────────────────────────
+
+model Agency {
+  id                    String                  @id @default(uuid())
+  name                  String                  @unique
+  email                 String                  @unique
+  phone                 String?                 @unique
+  address               String
+  agencyLogo            String?
+  description           String?
+  documents             String[]
+  acceptTerms           Boolean
+  isVerified            Boolean                 @default(false)
+  status                AgencyStatus            @default(PENDING)
+  // ownerId est une donnée dénormalisée (String simple, pas de FK Prisma)
+  // La relation réelle passe par Owner.agencyId
+  ownerId               String                  @unique // 1 agence = 1 owner
+  owner                 Owner                   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  staff                 Staff[]
+  leads                 Lead[]
+  tenants               Tenant[]
+  contracts             Contract[]
+  subscriptions         Subscription[]
+  tickets               Ticket[]
+  transactions          Transaction[]
+  reports               Report[]
+  notifications         Notification[]
+  visits                Visit[]
+  transactionCommission TransactionCommission[]
+  lands                 Land[]
+  batiment              Batiment[]
+  villas                Villa[]
+  properties            Property[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("property_owner")
+  @@map("agency")
 }
 
-model PropertyAgency {
-  id            String               @id @default(uuid())
-  name          String               @unique
-  description   String
-  address       String
-  phone         String
-  agencyLogo    String?
-  isApprove     Boolean              @default(false)
-  status        PropertyAgencyStatus @default(PENDING)
+// ─────────────────────────────────────────
+// TERRAIN, PROPRIÉTÉS & BATIMENTS
+// ─────────────────────────────────────────
+model Land {
+  id            String     @id @default(uuid())
+  title         String
+  purchasePrice Decimal    @db.Decimal(10, 2)
+  area          Float
+  city          String
+  district      String?
+  status        LandStatus @default(AVAILABLE)
   documents     String[]
-  acceptTerms   Boolean              @default(false)
-  rating        Float?
-  ownerId       String               @unique
-  owner         PropertyOwner        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  properties    Property[]
-  publicContact PublicContact[]
-  notification  Notification[]
+
+  agencyId String
+  agency   Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  batiments Batiment[]
+  villa     Villa[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("terrains")
 }
 
-// =======================
-// PROPERTY
-// =======================
+model Batiment {
+  id          String   @id @default(uuid())
+  name        String
+  address     String
+  city        String
+  district    String?
+  description String?
+  floors      Int?
+  documents   String[]
+  agencyId    String
+  landId      String?
+  land        Land?    @relation(fields: [landId], references: [id], onDelete: Cascade)
+  agency      Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  properties Property[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, agencyId])
+  @@index([agencyId])
+  @@map("batiment")
+}
+
+model Villa {
+  id          String   @id @default(uuid())
+  name        String
+  address     String
+  city        String
+  district    String?
+  description String?
+  price       Int
+  nbrItems    Int?
+  documents   String[]
+  agencyId    String
+  landId      String?
+  land        Land?    @relation(fields: [landId], references: [id], onDelete: Cascade)
+  agency      Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, agencyId])
+  @@index([agencyId])
+  @@map("villa")
+}
 
 model Property {
-  id               String       @id @default(uuid())
-  propertyAgenceId String
-  title            String
-  galleryImages    String[]
-  description      String
-  type             PropertyType
-  price            Decimal      @db.Decimal(10, 2)
-  surface          Int
-  rooms            Int
-  address          String
-  city             String
-  country          String
+  id          String         @id @default(uuid())
+  title       String
+  description String?
+  type        PropertyType
+  price       Decimal        @db.Decimal(10, 2)
+  caution     Decimal?       @db.Decimal(10, 2)
+  city        String
+  district    String?
+  rooms       Int
+  bathrooms   Int            @default(0)
+  area        Float?
+  status      PropertyStatus @default(AVAILABLE)
 
-  postalCode      Int?
-  sdb             Int?
-  locationCaution Decimal? @db.Decimal(10, 2)
+  galleryImages String[]
+  documents     String[]
+  agencyId      String?
+  batimentId    String
+  agency        Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  batiment      Batiment @relation(fields: [batimentId], references: [id], onDelete: Cascade)
 
-  status    PropertyStatus @default(AVAILABLE)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  leads     Lead[]
+  tenants   Tenant[]
+  contracts Contract[]
+  tickets   Ticket[]
+  favorites Favorite[]
+  visits    Visit[]
 
-  rentalRequests  RentalRequest[]
-  conversations   Conversation[]
-  favorites       Favorite[]
-  reports         Report[]
-  publicContact   PublicContact[]
-  rentalAgreement RentalAgreement[]
-  propertyAgency  PropertyAgency?   @relation(fields: [propertyAgenceId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([propertyAgenceId, title])
-  @@index([propertyAgenceId])
+  @@unique([agencyId, title])
+  @@unique([agencyId, batimentId])
+  @@index([agencyId])
+  @@index([batimentId])
   @@map("property")
 }
 
-// =======================
-// RENTAL
-// =======================
+// ─────────────────────────────────────────
+// LEADS
+// ─────────────────────────────────────────
 
-model RentalRequest {
-  id         String              @id @default(uuid())
+model Lead {
+  id      String     @id @default(uuid())
+  status  LeadStatus @default(NEW)
+  message String?
+
+  // Côté PUBLIC : infos saisies manuellement
+  guestName  String?
+  guestPhone String?
+  guestEmail String?
+
+  // Côté PRIVÉ : client connecté
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  // Agent assigné
+  assignedToId String?
+  assignedTo   Staff?  @relation(fields: [assignedToId], references: [id])
+
   propertyId String
-  tenantId   String
-  phone      String?
-  startDate  String?
-  message    String?
-  status     RentalRequestStatus @default(PENDING)
-  createdAt  DateTime            @default(now())
-
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant   User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@index([propertyId])
-  @@index([tenantId])
-  @@map("rental_request")
-}
-
-model RentalAgreement {
-  id         String                @id @default(uuid())
-  propertyId String                @unique
-  tenantId   String
-  startDate  DateTime              @default(now())
-  endDate    DateTime?
-  rentAmount Decimal               @db.Decimal(10, 2)
-  status     RentalAgreementStatus @default(ACTIVE)
-  createdAt  DateTime              @default(now())
-
-  property     Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  tenant       User           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  Conversation Conversation[]
-
-  @@index([tenantId])
-}
-
-// =======================
-// MESSAGING
-// =======================
-
-model Conversation {
-  id                String   @id @default(uuid())
-  propertyId        String
-  rentalAgreementId String?
-  createdAt         DateTime @default(now())
-
-  property        Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  rentalAgreement RentalAgreement? @relation(fields: [rentalAgreementId], references: [id], onDelete: Cascade)
-  messages        Message[]
-
-  @@index([propertyId])
-  @@index([rentalAgreementId])
-  @@map("conversation")
-}
-
-model Message {
-  id             String    @id @default(uuid())
-  conversationId String
-  senderId       String
-  content        String
-  readAt         DateTime?
-  createdAt      DateTime  @default(now())
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
-
-  @@index([conversationId])
-  @@index([senderId])
-  @@map("message")
-}
-
-model PublicContact {
-  id String @id @default(uuid())
-
-  fullName   String
-  email      String
-  phone      String
-  subject    String
-  message    String
-  status     ContactStatus @default(PENDING)
-  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
   agencyId   String
-  userId     String?
+  agency     Agency   @relation(fields: [agencyId], references: [id])
 
-  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
-  property       Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  propertyAgency PropertyAgency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  visits Visit[]
+  tenant Tenant? // ✅ FIX: backrelation manquante (Tenant.leadId)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([email, propertyId])
-  @@index([propertyId])
-  @@map("public_contact")
+  @@map("lead")
 }
 
-// =======================
-// FAVORITES
-// =======================
+// ─────────────────────────────────────────
+// VISITES
+// ─────────────────────────────────────────
+
+model Visit {
+  id          String      @id @default(uuid())
+  scheduledAt DateTime
+  status      VisitStatus @default(PLANNED)
+  notes       String?
+
+  leadId     String
+  lead       Lead     @relation(fields: [leadId], references: [id])
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+  agentId    String?
+  agent      Staff?   @relation(fields: [agentId], references: [id])
+  agencyId   String
+  agency     Agency   @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("visit")
+}
+
+// ─────────────────────────────────────────
+// FAVORIS
+// ─────────────────────────────────────────
 
 model Favorite {
   id         String   @id @default(uuid())
-  userId     String
+  clientId   String
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
 
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, propertyId])
+  @@unique([clientId, propertyId])
   @@map("favorite")
 }
 
-// =======================
-// REPORTS
-// =======================
+// ─────────────────────────────────────────
+// LOCATAIRES & CONTRATS
+// ─────────────────────────────────────────
 
-model Report {
-  id         String           @id @default(uuid())
-  reporterId String
-  targetType ReportTargetType
-  targetId   String
-  reason     String
-  createdAt  DateTime         @default(now())
+model Tenant {
+  id        String       @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  documents String[]
+  status    TenantStatus @default(ACTIVE)
 
-  reporter   User      @relation(fields: [reporterId], references: [id], onDelete: Cascade)
-  Property   Property? @relation(fields: [propertyId], references: [id])
-  propertyId String?
+  // Traçabilité de l'origine
+  leadId String? @unique // converti depuis un lead (1 lead → max 1 tenant)
+  lead   Lead?   @relation(fields: [leadId], references: [id])
 
-  @@index([reporterId])
-  @@map("report")
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+  agencyId   String
+  agency     Agency   @relation(fields: [agencyId], references: [id])
+
+  contracts Contract[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tenant")
+}
+
+model Contract {
+  id         String   @id @default(uuid())
+  startDate  DateTime
+  endDate    DateTime
+  rentAmount Decimal  @db.Decimal(10, 2)
+  deposit    Decimal  @db.Decimal(10, 2)
+  documents  String[]
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+  agencyId   String
+  agency     Agency   @relation(fields: [agencyId], references: [id])
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contract")
+}
+
+// ─────────────────────────────────────────
+// TICKETS / INCIDENTS
+// ─────────────────────────────────────────
+
+model Ticket {
+  id          String       @id @default(uuid())
+  type        TicketType
+  status      TicketStatus @default(OPEN)
+  description String?
+  documents   String[]
+
+  propertyId   String?
+  property     Property? @relation(fields: [propertyId], references: [id])
+  assignedToId String?
+  assignedTo   Staff?    @relation(fields: [assignedToId], references: [id])
+  agencyId     String
+  agency       Agency    @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ticket")
+}
+
+// ─────────────────────────────────────────
+// COMPTABILITÉ AGENCE
+// ─────────────────────────────────────────
+
+model Transaction {
+  id          String          @id @default(uuid())
+  type        TransactionType
+  amount      Decimal         @db.Decimal(10, 2)
+  description String?
+  date        DateTime        @default(now())
+  contractId  String?
+  contract    Contract?       @relation(fields: [contractId], references: [id])
+  agencyId    String
+  agency      Agency          @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("transaction")
+}
+
+// ─────────────────────────────────────────
+// BUSINESS MODEL APP
+// ─────────────────────────────────────────
+
+model TransactionCommission {
+  id String @id @default(uuid())
+
+  agencyId String
+  agency   Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  amount   Decimal @db.Decimal(10, 2)
+  currency String
+
+  status TransactionStatus @default(PENDING)
+
+  // 💸 commission calculée
+  commissionAmount Decimal? @db.Decimal(10, 2)
+  commissionRate   Decimal? @db.Decimal(5, 2)
+
+  validatedAt DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+// ─────────────────────────────────────────
+// ABONNEMENTS & RBAC
+// ─────────────────────────────────────────
+
+model Subscription {
+  id             String             @id @default(uuid())
+  agencyId       String
+  planId         String
+  plan           SubscriptionPlan   @relation(fields: [planId], references: [id])
+  agency         Agency             @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  status         SubscriptionStatus @default(ACTIVE)
+  // 🆕 snapshot sécurité
+  commissionRate Decimal            @db.Decimal(5, 2) // ex: 10.00 pour 10% de commission sur les transactions
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([agencyId])
+  @@index([planId])
+  @@map("subscription")
+}
+
+model SubscriptionPlan {
+  id             String         @id @default(cuid())
+  name           Plan           @unique @default(BASIC)
+  commissionRate Decimal        @db.Decimal(5, 2) // ex: 10 = 10%
+  isActive       Boolean        @default(true)
+  planFeatures   PlanFeature[]
+  subscriptions  Subscription[]
+
+  createdAt DateTime @default(now())
+
+  @@map("subscription_plan")
+}
+
+model Feature {
+  id          String          @id @default(uuid())
+  name        String // ex: "manage_properties", "view_reports"
+  description String?
+  category    FeatureCategory
+
+  planFeatures     PlanFeature[]
+  staffPermissions StaffPermission[]
+
+  @@map("feature")
+}
+
+model PlanFeature {
+  id      String  @id @default(uuid())
+  enabled Boolean @default(true)
+  limit   Int? // null = illimité
+
+  planId    String
+  featureId String
+  plan      SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  feature   Feature          @relation(fields: [featureId], references: [id])
+
+  @@unique([planId, featureId])
+  @@map("plan_feature")
+}
+
+model StaffPermission {
+  id        String  @id @default(uuid())
+  staffId   String
+  staff     Staff   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  featureId String
+  feature   Feature @relation(fields: [featureId], references: [id])
+  granted   Boolean @default(true)
+
+  grantedBy String?
+  grantedAt DateTime @default(now())
+
+  @@unique([staffId, featureId])
+  @@map("staff_permission")
 }
 
 // =======================
@@ -334,28 +598,132 @@ model Report {
 // =======================
 
 model Notification {
-  id          String  @id @default(uuid())
+  id      String           @id @default(uuid())
+  type    NotificationType
+  title   String?
+  content String
+  isRead  Boolean          @default(false)
+
   recipientId String
+  recipient   User    @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade) // ✅ FIX: relation nommée
   senderId    String?
+  sender      User?   @relation("NotificationSender", fields: [senderId], references: [id]) // ✅ FIX: relation nommée + FK définie
+  agencyId    String?
+  agency      Agency? @relation(fields: [agencyId], references: [id])
 
-  agencyId  String?
-  type      NotificationType
-  content   String
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
-
-  recipient        User            @relation(fields: [recipientId], references: [id], onDelete: Cascade)
-  PropertyAgency   PropertyAgency? @relation(fields: [propertyAgencyId], references: [id])
-  propertyAgencyId String?
+  createdAt DateTime @default(now())
 
   @@index([recipientId])
   @@index([agencyId])
   @@map("notification")
 }
 
-// =======================
+// ─────────────────────────────────────────
+// RAPPORTS
+// ─────────────────────────────────────────
+
+model Report {
+  id          String     @id @default(uuid())
+  type        ReportType
+  data        Json
+  generatedAt DateTime   @default(now())
+  agencyId    String
+  agency      Agency     @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("report")
+}
+
+// ─────────────────────────────────────────
 // ENUMS
-// =======================
+// ─────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN // back-office plateforme
+  OWNER // propriétaire de l'agence
+  AGENCY_ADMIN // admin interne agence
+  AGENT
+  ACCOUNTANT
+  USER //  (utilisateur mobile app)
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED // ✅ FIX: ajout pour modération super admin
+}
+
+enum AgencyRole {
+  AGENCY_ADMIN
+  AGENT
+  ACCOUNTANT
+}
+
+enum AgencyStatus {
+  PENDING
+  CLOSE
+  OPEN
+}
+
+enum NotificationType {
+  LEAD
+  VISIT
+  TICKET
+  PAYMENT
+  MAINTENANCE
+  SYSTEM
+}
+
+enum FeatureCategory {
+  PROPERTIES
+  LEADS
+  TENANTS
+  ACCOUNTING
+  USERS
+  REPORTS
+  TICKETS
+  MARKETING
+}
+
+enum Plan {
+  BASIC
+  STANDARD // ✅ FIX: PRO → STANDARD (conforme capture)
+  PREMIUM
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TransactionType {
+  RENT
+  SALE
+  COMMISSION
+  EXPENSE
+  MAINTENANCE
+}
+
+enum TicketType {
+  PLUMBING
+  ELECTRICITY
+  MAINTENANCE
+  OTHER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
 
 enum PropertyType {
   APARTMENT
@@ -363,56 +731,40 @@ enum PropertyType {
   STUDIO
 }
 
-enum ContactStatus {
-  PENDING
-  READ
-  REPLIED
-}
-
-enum PropertyAgencyStatus {
-  PENDING
-  CLOSE
-  OPEN
-}
-
-enum RentalAgreementStatus {
-  ACTIVE
-  TERMINATED
-}
-
 enum PropertyStatus {
   AVAILABLE
-  RESERVED
   RENTED
 }
 
-enum RentalRequestStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
+enum LandStatus {
+  AVAILABLE
+  CURRENTLY_ON_SALE
+  SOLD
 }
 
-enum NotificationType {
-  REQUEST
-  MESSAGE
-  PAYMENT
-  MAINTENANCE
-  SYSTEM
-}
-
-enum ReportTargetType {
-  PROPERTY
-  USER
-}
-
-enum UserStatus {
+enum TenantStatus {
   ACTIVE
-  SUSPENDED
-  DELETED
+  INACTIVE
 }
 
-enum UserRole {
-  USER
-  IMMO_OWNER
-  ADMIN
+enum VisitStatus {
+  PLANNED
+  CONFIRMED
+  DONE
+  CANCELLED
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  VISIT_PLANNED
+  OFFER
+  CONVERTED
+}
+
+enum ReportType {
+  FINANCIAL
+  PERFORMANCE
+  LEADS
+  CUSTOM
 }

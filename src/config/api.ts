@@ -5,10 +5,11 @@ export const API_URL = {
     SSO_GOOGLE: `${BASE_APIS_URL.SECURED}/auth/sso/google`,
     SYNC_USER: `${BASE_APIS_URL.UNSECURED}/auth/sync-user`,
     LOGIN: `${BASE_APIS_URL.UNSECURED}/auth/login`,
-    REFRESH_TOKEN: `${BASE_APIS_URL.SECURED}/auth/refresh-token`,
     LOGOUT: `${BASE_APIS_URL.SECURED}/auth/logout`,
-    FORGOT_PASSWORD: `${BASE_APIS_URL.UNSECURED}/auth/forgot-password`,
-    RESET_PASSWORD: `${BASE_APIS_URL.SECURED}/auth/reset-password`,
+    FORGOT_PASSWORD: `${BASE_APIS_URL.UNSECURED}/${APIS_URL_GLOBAL_PATH.AUTH}/forgot-password`,
+    RESET_PASSWORD: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.AUTH}/reset-password`,
+    SEND_VERIFICATION: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.AUTH}/send-email-verification`,
+    REGISTER: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.AUTH}/register`,
   },
   CONTACT: {
     PUBLIC_CONTACT: `${BASE_APIS_URL.UNSECURED}/contact/public`,
@@ -74,5 +75,9 @@ export const API_URL = {
     READ_ALL: `${BASE_APIS_URL.SECURED}/notif/read-all`,
     READ_ONE: `${BASE_APIS_URL.SECURED}/notif/read`,
     GET_UNREAD_NOTIF: `${BASE_APIS_URL.SECURED}/notif/get-all-unread`,
+  },
+  PACKS: {
+    ALL_PACKS: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.PACKS}/get-all-packs`,
+    CREATE_PACK: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.PACKS}/create-pack`,
   },
 };

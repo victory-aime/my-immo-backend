@@ -6,6 +6,8 @@ enum BASE_APIS_URL {
 
 enum APIS_URL_GLOBAL_PATH {
   USERS = 'users',
+  PACKS = 'packs',
+  AUTH = 'auth',
 }
 
 enum CLOUDINARY_FOLDER_NAME {
@@ -18,12 +20,6 @@ enum CLOUDINARY_FOLDER_NAME {
 
 enum SWAGGER_TAGS {
   USER_MANAGEMENT = 'Users management',
-}
-
-enum APP_ROLES {
-  ADMIN = 'ADMIN',
-  USER = 'USER',
-  IMMO_OWNER = 'IMMO_OWNER',
 }
 
 enum TOKEN_EXCEPTION {
@@ -41,7 +37,6 @@ enum EXPIRE_TIME {
 
 export {
   TOKEN_EXCEPTION,
-  APP_ROLES,
   CLOUDINARY_FOLDER_NAME,
   BASE_APIS_URL,
   SWAGGER_TAGS,

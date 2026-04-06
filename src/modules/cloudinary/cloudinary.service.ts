@@ -26,7 +26,6 @@ export class CloudinaryService {
           public_id: filename,
           folder: folderPath,
           access_mode: 'public',
-          format: 'auto',
           overwrite: true,
         },
         (error, result) => {

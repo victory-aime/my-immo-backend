@@ -1,10 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { User } from '../../../prisma/generated/client';
+import { getAuthInstance } from '_root/lib/auth';
+import { HttpError } from '_root/config/http.error';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async getBetterAuthInstance() {
+    return getAuthInstance();
+  }
 
   async findUser(where: { id?: string; email?: string }) {
     if (!where.id && !where.email) return null;
@@ -19,10 +30,10 @@ export class UsersService {
             providerId: true,
           },
         },
-        propertyOwner: {
+        owner: {
           select: {
             id: true,
-            propertyAgency: {
+            agency: {
               select: {
                 id: true,
               },
@@ -63,7 +74,7 @@ export class UsersService {
 
     const [data, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
-        where: { role: { in: ['USER', 'IMMO_OWNER'] } },
+        where: { role: { in: ['USER', 'OWNER'] } },
         orderBy: {
           createdAt: 'desc',
         },
@@ -72,7 +83,7 @@ export class UsersService {
       }),
 
       this.prisma.user.count({
-        where: { role: { in: ['USER', 'IMMO_OWNER'] } },
+        where: { role: { in: ['USER', 'OWNER'] } },
       }),
     ]);
 
@@ -91,9 +102,9 @@ export class UsersService {
       include: {
         accounts: true,
         sessions: true,
-        propertyOwner: {
+        owner: {
           include: {
-            propertyAgency: true,
+            agency: true,
           },
         },
       },
@@ -103,9 +114,5 @@ export class UsersService {
   async checkUserEmail(email: string): Promise<boolean> {
     const user = await this.findUser({ email });
     return !!user;
-  }
-
-  async getListPassKey() {
-    //await this.better
   }
 }

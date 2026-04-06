@@ -16,7 +16,10 @@ export class propertyDto {
     example: 'ckx456def',
   })
   @IsString()
-  propertyAgenceId: string;
+  agencyId: string;
+
+  @IsString()
+  batimentId: string;
 
   @ApiProperty({
     description: 'Titre de la propriété',
@@ -30,6 +33,12 @@ export class propertyDto {
     example: 'https://example.com/images/property-cover.jpg',
   })
   galleryImages: string[];
+
+  @ApiProperty({
+    description: 'URL des documents de la propriété',
+    example: 'https://example.com/images/property-cover.jpg',
+  })
+  documents: string[];
 
   @ApiProperty({
     description: 'Description détaillée de la propriété',
@@ -56,37 +65,25 @@ export class propertyDto {
     description: 'Caution de la propriété en FCFA',
     example: 250000,
   })
-  locationCaution: number;
+  caution: number;
 
   @ApiProperty({
     description: 'Nombre de salle de bain',
     example: 4,
   })
-  sdb: number;
-
-  @ApiProperty({
-    description: 'Code postal',
-    example: 4025648,
-  })
-  postalCode: number;
+  bathrooms: number;
 
   @ApiProperty({
     description: 'Surface de la propriété en mètres carrés',
     example: 120,
   })
-  surface: number;
+  area: number;
 
   @ApiProperty({
     description: 'Nombre de chambres de la propriété',
     example: 3,
   })
   rooms: number;
-
-  @ApiProperty({
-    description: 'Adresse de la propriété',
-    example: '123 Rue de la Plage, Dakar, Sénégal',
-  })
-  address: string;
 
   @ApiProperty({
     description: 'Ville où se situe la propriété',
@@ -98,5 +95,5 @@ export class propertyDto {
     description: 'Pays où se situe la propriété',
     example: 'Sénégal',
   })
-  country: string;
+  district: string;
 }

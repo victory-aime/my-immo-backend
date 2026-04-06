@@ -11,12 +11,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { AgencyModule } from '_root/modules/agency/agency.module';
 import { PropertyModule } from '_root/modules/property/property.module';
 import { BetterAuthModule } from '_root/lib/auth.module';
-import { ContactModule } from '_root/modules/contact/contact.module';
-import { ApplicationModule } from '_root/modules/application/application.module';
-import { RentalAgreementModule } from '_root/modules/rental-agreement/rental-agreement.module';
-import { ChatModule } from '_root/modules/chat/chat.module';
-import { NotificationsModule } from '_root/modules/notifications/notifications.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { PackModule } from '_root/modules/packs/pack.module';
+import { AuthModule } from '_root/modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -26,7 +23,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
           format: winston.format.combine(
             winston.format.timestamp(),
             winston.format.ms(),
-            nestWinstonModuleUtilities.format.nestLike('Rental-Platform', {
+            nestWinstonModuleUtilities.format.nestLike(process.env.APP_NAME, {
               colors: true,
               prettyPrint: true,
               processId: true,
@@ -49,14 +46,11 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
       ],
     }),
     BetterAuthModule,
+    AuthModule,
     UsersModule,
     AgencyModule,
     PropertyModule,
-    ContactModule,
-    ApplicationModule,
-    RentalAgreementModule,
-    ChatModule,
-    NotificationsModule,
+    PackModule,
   ],
 
   providers: [

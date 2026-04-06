@@ -27,7 +27,7 @@ export class PropertyService {
     const [data, total] = await this.prisma.$transaction([
       this.prisma.property.findMany({
         where: {
-          propertyAgenceId: agencyId,
+          agencyId,
         },
         orderBy: {
           createdAt: 'desc',
@@ -38,7 +38,7 @@ export class PropertyService {
 
       this.prisma.property.count({
         where: {
-          propertyAgenceId: agencyId,
+          agencyId,
         },
       }),
     ]);
@@ -58,11 +58,11 @@ export class PropertyService {
         status: 'AVAILABLE',
       },
       include: {
-        propertyAgency: {
+        agency: {
           select: {
             name: true,
             phone: true,
-            isApprove: true,
+            isVerified: true,
           },
         },
       },
@@ -73,15 +73,12 @@ export class PropertyService {
     ownerId: string,
     data: propertyDto,
   ): Promise<{ message: string }> {
-    await this.agencyService.checkAgencyOwnership(
-      ownerId,
-      data.propertyAgenceId,
-    );
+    await this.agencyService.checkAgencyOwnership(ownerId, data.agencyId);
 
     const uniqueName = await this.prisma.property.findUnique({
       where: {
-        propertyAgenceId_title: {
-          propertyAgenceId: data.propertyAgenceId,
+        agencyId_title: {
+          agencyId: data.agencyId,
           title: data.title,
         },
       },
@@ -116,10 +113,7 @@ export class PropertyService {
       );
     }
 
-    await this.agencyService.checkAgencyOwnership(
-      ownerId,
-      property.propertyAgenceId,
-    );
+    await this.agencyService.checkAgencyOwnership(ownerId, property.agencyId!);
 
     return this.prisma.property.update({
       where: {
@@ -134,7 +128,7 @@ export class PropertyService {
 
     const properties = await this.prisma.property.findMany({
       where: {
-        propertyAgenceId: agencyId,
+        agencyId,
       },
       select: {
         type: true,
@@ -179,7 +173,7 @@ export class PropertyService {
     await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
 
     const properties = await this.prisma.property.findMany({
-      where: { propertyAgenceId: agencyId },
+      where: { agencyId },
       select: {
         type: true,
         status: true,
@@ -194,14 +188,10 @@ export class PropertyService {
       if (p.status !== 'AVAILABLE') grouped[p.type].occupied += 1;
     });
 
-    const result = Object.entries(grouped).map(
-      ([type, { total, occupied }]) => ({
-        propertyType: type,
-        occupationRate: Math.round((occupied / total) * 100),
-      }),
-    );
-
-    return result;
+    return Object.entries(grouped).map(([type, { total, occupied }]) => ({
+      propertyType: type,
+      occupationRate: Math.round((occupied / total) * 100),
+    }));
   }
 
   /**
@@ -212,7 +202,7 @@ export class PropertyService {
 
     const properties = await this.prisma.property.findMany({
       where: {
-        propertyAgenceId: agencyId,
+        agencyId,
         status: { not: 'AVAILABLE' },
       },
       select: { price: true },

@@ -21,6 +21,40 @@ async function bootstrap() {
   // Access BetterAuth instance from AuthService
   const authService = app.get<AuthService>(AuthService);
 
+  expressApp.use((req, res, next) => {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5080',
+      'http://localhost:8082',
+      'exp://',
+      'exp://**',
+      'exp://192.168.*.*:*/**',
+      'http://localhost:8081',
+    ];
+
+    const origin = req.headers.origin;
+
+    if (allowedOrigins.includes(origin!)) {
+      res.header('Access-Control-Allow-Origin', origin); // 🔥 dynamique
+    }
+
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header(
+      'Access-Control-Allow-Headers',
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization',
+    );
+    res.header(
+      'Access-Control-Allow-Methods',
+      'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    );
+
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+
+    next();
+  });
+
   // Mount BetterAuth before body parsers
   expressApp.all(
     /^\/api\/auth\/.*/,

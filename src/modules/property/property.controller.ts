@@ -73,7 +73,7 @@ export class PropertyController {
     return properties?.map((property) => ({
       ...property,
       price: property.price.toNumber(),
-      locationCaution: property.locationCaution?.toNumber(),
+      locationCaution: property.caution?.toNumber(),
     }));
   }
 
@@ -101,7 +101,7 @@ export class PropertyController {
   ) {
     let cloudinaryGalleryFilesUrl: string[] = [];
     const getAgencyName = await this.agencyService.findAgency(
-      data?.propertyAgenceId,
+      data?.agencyId,
       ownerId,
     );
     if (files?.galleryImages?.length) {
@@ -119,10 +119,9 @@ export class PropertyController {
       ...data,
       price: convertToInteger(data?.price),
       rooms: convertToInteger(data?.rooms),
-      surface: convertToInteger(data?.surface),
-      sdb: convertToInteger(data?.sdb),
-      locationCaution: convertToInteger(data?.locationCaution),
-      postalCode: convertToInteger(data?.postalCode),
+      area: convertToInteger(data?.area),
+      bathrooms: convertToInteger(data?.bathrooms),
+      caution: convertToInteger(data?.caution),
       galleryImages: cloudinaryGalleryFilesUrl,
     });
   }
@@ -152,7 +151,7 @@ export class PropertyController {
   ) {
     let cloudinaryGalleryFilesUrl: string[] = [];
     const getAgencyName = await this.agencyService.findAgency(
-      data?.propertyAgenceId,
+      data?.agencyId,
       ownerId,
     );
     if (files?.galleryImages?.length) {
@@ -170,10 +169,9 @@ export class PropertyController {
       ...data,
       price: convertToInteger(data?.price),
       rooms: convertToInteger(data?.rooms),
-      surface: convertToInteger(data?.surface),
-      sdb: convertToInteger(data?.sdb),
-      locationCaution: convertToInteger(data?.locationCaution),
-      postalCode: convertToInteger(data?.postalCode),
+      area: convertToInteger(data?.area),
+      bathrooms: convertToInteger(data?.bathrooms),
+      caution: convertToInteger(data?.caution),
       galleryImages: cloudinaryGalleryFilesUrl,
     });
   }

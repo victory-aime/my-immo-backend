@@ -1,7 +1,4 @@
-import {
-  RentalAgreementStatus,
-  UserStatus,
-} from '../../../prisma/generated/enums';
+import { UserStatus } from '../../../prisma/generated/enums';
 
 export class IRentalAgreementResponseDto {
   id: string;
@@ -16,7 +13,7 @@ export class IRentalAgreementResponseDto {
   property: {
     title: string;
   };
-  status: RentalAgreementStatus;
+  //status: RentalAgreementStatus;
   startDate: string;
   endDate?: string;
 }

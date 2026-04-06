@@ -1,39 +1,36 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MinLength,
+} from 'class-validator';
+import { Plan } from '../../../prisma/generated/enums';
 
 export class createAgencyOwnerDto {
+  @IsString()
   @ApiProperty({ example: 'NANA Beauty Salon' })
   name: string;
 
+  @IsEmail()
+  @ApiProperty({ example: 'NANA Beauty Salon' })
+  email: string;
+
+  @IsString()
   @ApiProperty({ example: '123 Avenue Habib Bourguiba' })
   address: string;
 
+  @IsString()
   @ApiProperty({ example: 'Professional hair salon for women' })
-  description: string;
-
-  @ApiProperty({ example: 'Tunis' })
-  city: string;
-
-  @ApiProperty({ example: '+21698765432' })
   phone: string;
 
-  @ApiProperty({
-    example: 'https://cdn.app.com/salon-cover.jpg',
-    description: "Logo de l'agence",
-  })
-  agencyLogo: string;
-
-  @ApiProperty({
-    example: 'A812uidbcxllf',
-    description: "L'identifiant de l'utilisateur",
-  })
-  userId: string;
-
-  @ApiProperty({
-    description: "Listes des documents pour valider l'identité",
-  })
-  documents: string[];
+  @IsString()
+  @ApiProperty({ example: 'Professional hair salon for women' })
+  description: string;
 
   @ApiProperty({
     description: "Accepter les terms d'utilisation",
@@ -41,13 +38,38 @@ export class createAgencyOwnerDto {
   @Transform(({ value }) => value === 'true')
   @IsBoolean()
   acceptTerms: boolean;
+
+  @IsOptional()
+  @IsString({ each: true })
+  @ApiProperty({
+    description: "Listes des documents pour valider l'identité",
+  })
+  documents?: string[];
+
+  // ✅ Plan choisi à l'onboarding (BASIC par défaut)
+  @IsOptional()
+  @IsEnum(Plan)
+  plan?: Plan;
+
+  @IsEmail()
+  userEmail: string;
+
+  @IsString()
+  username: string;
+
+  @IsString()
+  @MinLength(12)
+  password: string;
 }
 
 export class updateAgencyDto extends createAgencyOwnerDto {
-  @ApiProperty({
-    example: '12GYgZIZ',
-    description: "L'identifiant de l'agence",
-  })
-  @IsString()
+  @IsUUID()
   agencyId: string;
+
+  @IsUUID()
+  userId: string;
+
+  @IsOptional()
+  @IsString()
+  agencyLogo?: string;
 }

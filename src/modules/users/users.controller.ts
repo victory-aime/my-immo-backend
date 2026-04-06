@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { API_URL } from '_root/config/api';
 import {
@@ -18,10 +27,8 @@ import {
   UserSession,
 } from '@thallesp/nestjs-better-auth';
 import { AuthorizeRoles, MiddlewareGuard } from '_root/guard/middleware.guard';
-import { UserRole } from '../../../prisma/generated/enums';
+import { Role } from '../../../prisma/generated/enums';
 import { convertToInteger } from '_root/config/convert';
-import { query } from 'winston';
-import { SkipThrottle } from '@nestjs/throttler';
 
 @ApiBearerAuth()
 @ApiTags(SWAGGER_TAGS.USER_MANAGEMENT)
@@ -45,7 +52,7 @@ export class UsersController {
   }
 
   @Get(API_URL.USER.ALL_USERS)
-  @AuthorizeRoles(UserRole.ADMIN)
+  @AuthorizeRoles(Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Récupérer les informations des utilisateurs' })
   @ApiOkResponse({ description: 'Informations utilisateurs récupérées.' })
   @ApiNotFoundResponse({ description: 'Aucun Utilisateur.' })
@@ -59,7 +66,7 @@ export class UsersController {
   }
 
   @Get(API_URL.USER.ONE_USER)
-  @AuthorizeRoles(UserRole.ADMIN)
+  @AuthorizeRoles(Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Récupérer les informations de utilisateur' })
   @ApiOkResponse({ description: 'Informations utilisateur récupérée.' })
   @ApiNotFoundResponse({ description: 'Aucun Utilisateur.' })
@@ -75,12 +82,6 @@ export class UsersController {
   }
 
   @AllowAnonymous()
-  @Get('users')
-  @SkipThrottle({ default: false })
-  dontSkip() {
-    return 'List users work with Rate limiting.';
-  }
-  @AllowAnonymous()
   @Post(API_URL.USER.CHECK_EMAIL)
   @ApiOperation({ summary: 'Verifier un email' })
   @ApiOkResponse({
@@ -91,11 +92,5 @@ export class UsersController {
   })
   async checkUserEmail(@Body() data: { email: string }) {
     return this.userService.checkUserEmail(data?.email);
-  }
-
-  @AllowAnonymous()
-  @Get('public')
-  async getPublic() {
-    return true;
   }
 }
