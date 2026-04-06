@@ -1,3 +1,16 @@
+# [1.5.0](https://github.com/victory-aime/my-immo-backend/compare/v1.4.1...v1.5.0) (2026-04-06)
+
+
+### Bug Fixes
+
+* **app:** update app db and architecture ([37928dd](https://github.com/victory-aime/my-immo-backend/commit/37928dd184801f21a071c7001737e99010443425))
+
+
+### Features
+
+* **passkey plugins:** passkey ([04cf337](https://github.com/victory-aime/my-immo-backend/commit/04cf337a3bee7f32bc51e86af8176325841577b7))
+* **users-cloudinary:** users-cloudinary ([d0f9359](https://github.com/victory-aime/my-immo-backend/commit/d0f935903c70bb57e6940d8415a869622c953394))
+
 ## [1.4.1](https://github.com/victory-aime/my-immo-backend/compare/v1.4.0...v1.4.1) (2026-03-18)
 
 ### Bug Fixes
