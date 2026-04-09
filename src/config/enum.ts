@@ -8,6 +8,7 @@ enum APIS_URL_GLOBAL_PATH {
   USERS = 'users',
   PACKS = 'packs',
   AUTH = 'auth',
+  BUILDING = 'building',
 }
 
 enum CLOUDINARY_FOLDER_NAME {

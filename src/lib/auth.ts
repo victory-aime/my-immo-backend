@@ -7,8 +7,8 @@ import { EXPIRE_TIME } from '../config/enum';
 import { twoFactor } from 'better-auth/plugins';
 import { passkey } from '@better-auth/passkey';
 import { expo } from '@better-auth/expo';
-import { authEmailBridge } from '_root/modules/auth/auth-email.bridge';
-import { formatExpiresIn } from '_root/modules/mail/utils/getExpiresTime';
+import { authEmailBridge } from '../modules/auth/auth-email.bridge';
+import { formatExpiresIn } from '../modules/mail/utils/getExpiresTime';
 
 export const betterAuthPrisma = new PrismaClient({
   adapter: new PrismaPg({
@@ -51,7 +51,7 @@ export const createAuth = (): ReturnType<typeof betterAuth> => {
     session: {
       cookieCache: {
         enabled: true,
-        maxAge: EXPIRE_TIME._60_MINUTES,
+        maxAge: EXPIRE_TIME._30_MINUTES,
         strategy: 'compact',
       },
     },

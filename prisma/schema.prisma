@@ -237,18 +237,20 @@ model Land {
 }
 
 model Batiment {
-  id          String   @id @default(uuid())
-  name        String
-  address     String
-  city        String
-  district    String?
-  description String?
-  floors      Int?
-  documents   String[]
-  agencyId    String
-  landId      String?
-  land        Land?    @relation(fields: [landId], references: [id], onDelete: Cascade)
-  agency      Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  id            String         @id @default(uuid())
+  name          String
+  address       String
+  city          String
+  district      String?
+  description   String?
+  floors        Int?
+  buildingOwner String
+  documents     String[]
+  status        BatimentStatus @default(AVAILABLE)
+  agencyId      String
+  landId        String?
+  land          Land?          @relation(fields: [landId], references: [id], onDelete: Cascade)
+  agency        Agency         @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
   properties Property[]
 
@@ -284,26 +286,28 @@ model Villa {
 }
 
 model Property {
-  id          String         @id @default(uuid())
-  title       String
-  description String?
-  type        PropertyType
-  price       Decimal        @db.Decimal(10, 2)
-  caution     Decimal?       @db.Decimal(10, 2)
-  city        String
-  district    String?
-  rooms       Int
-  bathrooms   Int            @default(0)
-  area        Float?
-  status      PropertyStatus @default(AVAILABLE)
+  id             String         @id @default(uuid())
+  title          String
+  type           PropertyType
+  price          Decimal        @db.Decimal(10, 2) @default(0)
+  caution        Decimal        @db.Decimal(10, 2) @default(0)
+  propertyNumber String?
+  propertyOwner  String?
+  address        String?
+  city           String?
+  district       String?
+  rooms          Int
+  bathrooms      Int            @default(0)
+  area           Float?
+  status         PropertyStatus @default(AVAILABLE)
+  documents      String[]
 
-  galleryImages String[]
-  documents     String[]
-  agencyId      String?
-  batimentId    String
-  agency        Agency?  @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  batiment      Batiment @relation(fields: [batimentId], references: [id], onDelete: Cascade)
+  agencyId   String
+  batimentId String?
+  agency     Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  batiment   Batiment? @relation(fields: [batimentId], references: [id], onDelete: Cascade)
 
+  annonces  Annonce[]
   leads     Lead[]
   tenants   Tenant[]
   contracts Contract[]
@@ -315,10 +319,28 @@ model Property {
   updatedAt DateTime @updatedAt
 
   @@unique([agencyId, title])
-  @@unique([agencyId, batimentId])
   @@index([agencyId])
   @@index([batimentId])
   @@map("property")
+}
+
+model Annonce {
+  id String @id @default(uuid())
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  description   String
+  galleryImages String[]
+
+  status AnnonceStatus @default(ACTIVE)
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([propertyId])
+  @@map("annonces")
 }
 
 // ─────────────────────────────────────────
@@ -736,10 +758,21 @@ enum PropertyStatus {
   RENTED
 }
 
+enum AnnonceStatus {
+  ACTIVE
+  INACTIVE
+}
+
 enum LandStatus {
   AVAILABLE
   CURRENTLY_ON_SALE
   SOLD
+}
+
+enum BatimentStatus {
+  AVAILABLE
+  UNAVAILABLE
+  MAINTENANCE
 }
 
 enum TenantStatus {

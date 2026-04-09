@@ -1,8 +1,12 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
-import { propertyDto } from '_root/modules/property/property.dto';
+import {
+  propertyDto,
+  PropertyFilterDto,
+} from '_root/modules/property/property.dto';
 import { HttpError } from '_root/config/http.error';
 import { AgencyService } from '_root/modules/agency/agency.service';
+import { convertToInteger } from '_root/config/convert';
 
 @Injectable()
 export class PropertyService {
@@ -11,24 +15,27 @@ export class PropertyService {
     private readonly agencyService: AgencyService,
   ) {}
 
-  async getAllPropertyByAgency(
-    ownerId: string,
-    agencyId: string,
-    page?: number,
-    limit?: number,
-  ) {
-    await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
+  async getAllPropertyByAgency(query: PropertyFilterDto) {
+    await this.agencyService.checkAgencyOwnership(
+      query?.ownerId,
+      query?.agencyId,
+    );
 
-    const pageInitial = page || 1;
-    const limitPage = limit || 10;
+    const pageInitial = convertToInteger(query?.initialPage) || 1;
+    const limitPage = convertToInteger(query?.limitPerPage) || 10;
 
     const skip = (pageInitial - 1) * limitPage;
 
+    const propertyFilterOptions = {
+      ...{ agencyId: query?.agencyId },
+      ...(query.title && { name: query.title }),
+      ...(query.type && { city: query.type }),
+      ...(query.status && { status: query.status }),
+    };
+
     const [data, total] = await this.prisma.$transaction([
       this.prisma.property.findMany({
-        where: {
-          agencyId,
-        },
+        where: propertyFilterOptions,
         orderBy: {
           createdAt: 'desc',
         },
@@ -37,9 +44,7 @@ export class PropertyService {
       }),
 
       this.prisma.property.count({
-        where: {
-          agencyId,
-        },
+        where: propertyFilterOptions,
       }),
     ]);
 
@@ -92,6 +97,46 @@ export class PropertyService {
       );
     }
 
+    if (data.batimentId) {
+      const batiment = await this.prisma.batiment.findUnique({
+        where: { id: data.batimentId },
+      });
+
+      if (!batiment) {
+        throw new HttpError(
+          'Bâtiment introuvable',
+          HttpStatus.NOT_FOUND,
+          'BATIMENT_NOT_FOUND',
+        );
+      }
+
+      if (batiment.agencyId !== data.agencyId) {
+        throw new HttpError(
+          "Le bâtiment n'appartient pas à votre agence",
+          HttpStatus.FORBIDDEN,
+          'INVALID_BATIMENT',
+        );
+      }
+
+      // 👉 On ignore les champs adresse si bâtiment fourni
+      data.address = null;
+      data.city = null;
+      data.district = null;
+    } else {
+      if (
+        !data.address ||
+        !data.city ||
+        !data?.district ||
+        !data?.propertyOwner
+      ) {
+        throw new HttpError(
+          'Adresse, ville, quartier et propriétaire requis si aucun bâtiment',
+          HttpStatus.BAD_REQUEST,
+          'ADDRESS_REQUIRED',
+        );
+      }
+    }
+
     await this.prisma.property.create({
       data,
     });
@@ -100,7 +145,12 @@ export class PropertyService {
       message: 'Propriété créée avec succès',
     };
   }
-  async updateProperty(ownerId: string, propertyId: string, data: propertyDto) {
+
+  async updateProperty(
+    ownerId: string,
+    propertyId: string,
+    data: propertyDto,
+  ): Promise<{ message: string }> {
     const property = await this.prisma.property.findUnique({
       where: { id: propertyId },
     });
@@ -115,12 +165,87 @@ export class PropertyService {
 
     await this.agencyService.checkAgencyOwnership(ownerId, property.agencyId!);
 
-    return this.prisma.property.update({
-      where: {
-        id: propertyId,
+    // 🧠 Cas où on change le bâtiment
+    if (data.batimentId) {
+      const batiment = await this.prisma.batiment.findUnique({
+        where: { id: data.batimentId },
+      });
+
+      if (!batiment) {
+        throw new HttpError(
+          'Bâtiment introuvable',
+          HttpStatus.NOT_FOUND,
+          'BATIMENT_NOT_FOUND',
+        );
+      }
+
+      if (batiment.agencyId !== property.agencyId) {
+        throw new HttpError(
+          "Le bâtiment n'appartient pas à votre agence",
+          HttpStatus.FORBIDDEN,
+          'INVALID_BATIMENT',
+        );
+      }
+
+      // 👉 reset adresse si bâtiment
+      data.address = null;
+      data.city = null;
+      data.district = null;
+      data.propertyOwner = null;
+    }
+
+    if (data.batimentId === null) {
+      if (!data.address && !property.address) {
+        throw new HttpError(
+          'Adresse requise si aucun bâtiment',
+          HttpStatus.BAD_REQUEST,
+          'ADDRESS_REQUIRED',
+        );
+      }
+    }
+
+    if (data.title && data.title !== property.title) {
+      const existing = await this.prisma.property.findUnique({
+        where: {
+          agencyId_title: {
+            agencyId: property.agencyId!,
+            title: data.title,
+          },
+        },
+      });
+
+      if (existing) {
+        throw new HttpError(
+          'Une propriété avec ce titre existe déjà',
+          HttpStatus.CONFLICT,
+          'PROPERTY_ALREADY_EXISTS',
+        );
+      }
+    }
+
+    const { agencyId, batimentId, ...safeValues } = data;
+
+    const relationData =
+      batimentId !== undefined
+        ? batimentId === null
+          ? { batiment: { disconnect: true } } // 🔥 retirer bâtiment
+          : { batiment: { connect: { id: batimentId } } } // 🔥 lier bâtiment
+        : {};
+
+    await this.prisma.property.update({
+      where: { id: propertyId },
+      data: {
+        ...safeValues,
+        agency: {
+          connect: { id: agencyId },
+        },
+        ...relationData,
       },
-      data,
     });
+
+    return {
+      message: 'Propriété créée avec succès',
+    };
   }
 
   async getOccupationRateByType1(ownerId: string, agencyId: string) {
@@ -194,49 +319,49 @@ export class PropertyService {
     }));
   }
 
-  /**
-   * Stats: Revenus mensuels par maison occupée (fake API pour dev)
-   */
-  async getMonthlyRevenue(ownerId: string, agencyId: string) {
-    await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
-
-    const properties = await this.prisma.property.findMany({
-      where: {
-        agencyId,
-        status: { not: 'AVAILABLE' },
-      },
-      select: { price: true },
-    });
-
-    const expectedAmount = properties.reduce(
-      (sum, p) => sum + Number(p.price),
-      0,
-    );
-
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-
-    return months.map((month) => {
-      const remainingAmount = Math.floor(Math.random() * expectedAmount * 0.4);
-      const receivedAmount = expectedAmount - remainingAmount;
-
-      return {
-        month,
-        receivedAmount,
-        remainingAmount,
-      };
-    });
-  }
+  // /**
+  //  * Stats: Revenus mensuels par maison occupée (fake API pour dev)
+  //  */
+  // async getMonthlyRevenue(ownerId: string, agencyId: string) {
+  //   await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
+  //
+  //   const properties = await this.prisma.property.findMany({
+  //     where: {
+  //       agencyId,
+  //       status: { not: 'AVAILABLE' },
+  //     },
+  //     select: { price: true },
+  //   });
+  //
+  //   const expectedAmount = properties.reduce(
+  //     (sum, p) => sum + Number(p.price),
+  //     0,
+  //   );
+  //
+  //   const months = [
+  //     'January',
+  //     'February',
+  //     'March',
+  //     'April',
+  //     'May',
+  //     'June',
+  //     'July',
+  //     'August',
+  //     'September',
+  //     'October',
+  //     'November',
+  //     'December',
+  //   ];
+  //
+  //   return months.map((month) => {
+  //     const remainingAmount = Math.floor(Math.random() * expectedAmount * 0.4);
+  //     const receivedAmount = expectedAmount - remainingAmount;
+  //
+  //     return {
+  //       month,
+  //       receivedAmount,
+  //       remainingAmount,
+  //     };
+  //   });
+  // }
 }

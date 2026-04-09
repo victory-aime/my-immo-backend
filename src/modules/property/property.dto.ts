@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsArray, IsNumber, IsOptional } from 'class-validator';
-import { PropertyType } from '../../../prisma/generated/enums';
+import { PropertyStatus, PropertyType } from '../../../prisma/generated/enums';
+import { IPaginationDto } from '_root/config/pagination.dto';
 
 export class propertyDto {
   @ApiProperty({
@@ -18,8 +19,8 @@ export class propertyDto {
   @IsString()
   agencyId: string;
 
-  @IsString()
-  batimentId: string;
+  @IsOptional()
+  batimentId?: string;
 
   @ApiProperty({
     description: 'Titre de la propriété',
@@ -29,24 +30,10 @@ export class propertyDto {
   title: string;
 
   @ApiProperty({
-    description: 'URL des images de la propriété',
-    example: 'https://example.com/images/property-cover.jpg',
-  })
-  galleryImages: string[];
-
-  @ApiProperty({
     description: 'URL des documents de la propriété',
     example: 'https://example.com/images/property-cover.jpg',
   })
   documents: string[];
-
-  @ApiProperty({
-    description: 'Description détaillée de la propriété',
-    example:
-      'Cet appartement moderne offre une vue imprenable sur la mer, avec 3 chambres, 2 salles de bain, et une cuisine entièrement équipée.',
-  })
-  @IsString()
-  description: string;
 
   @ApiProperty({
     description: 'Type de la propriété',
@@ -56,22 +43,21 @@ export class propertyDto {
   type: PropertyType;
 
   @ApiProperty({
-    description: 'Prix de la propriété en FCFA',
-    example: 250000,
+    description: 'Nombre de salle de bain',
+    example: 4,
   })
-  price: number;
-
-  @ApiProperty({
-    description: 'Caution de la propriété en FCFA',
-    example: 250000,
-  })
-  caution: number;
+  bathrooms: number;
 
   @ApiProperty({
     description: 'Nombre de salle de bain',
     example: 4,
   })
-  bathrooms: number;
+  price: number;
+  @ApiProperty({
+    description: 'Nombre de salle de bain',
+    example: 4,
+  })
+  caution: number;
 
   @ApiProperty({
     description: 'Surface de la propriété en mètres carrés',
@@ -86,14 +72,38 @@ export class propertyDto {
   rooms: number;
 
   @ApiProperty({
+    description: 'Nombre de chambres de la propriété',
+    example: 'A3',
+  })
+  propertyNumber: string;
+
+  @ApiProperty({
     description: 'Ville où se situe la propriété',
     example: 'Dakar',
   })
-  city: string;
+  city?: string | null;
+
+  @ApiProperty({
+    description: 'Adresse complète où se situe la propriété',
+    example: 'Dakar',
+  })
+  address: string | null;
 
   @ApiProperty({
     description: 'Pays où se situe la propriété',
     example: 'Sénégal',
   })
-  district: string;
+  district?: string | null;
+
+  @ApiProperty({
+    description: 'Pays où se situe la propriété',
+    example: 'Sénégal',
+  })
+  propertyOwner?: string | null;
+}
+
+export class PropertyFilterDto extends IPaginationDto {
+  title?: string;
+  status?: PropertyStatus;
+  type?: PropertyType;
 }

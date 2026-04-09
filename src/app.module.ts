@@ -14,6 +14,7 @@ import { BetterAuthModule } from '_root/lib/auth.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PackModule } from '_root/modules/packs/pack.module';
 import { AuthModule } from '_root/modules/auth/auth.module';
+import { BuildingModule } from '_root/modules/building/building.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { AuthModule } from '_root/modules/auth/auth.module';
     UsersModule,
     AgencyModule,
     PropertyModule,
+    BuildingModule,
     PackModule,
   ],
 
