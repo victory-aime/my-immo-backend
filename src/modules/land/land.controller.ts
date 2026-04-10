@@ -8,46 +8,46 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
-import { BuildingService } from '_root/modules/building/building.service';
+import { LandService } from '_root/modules/land/land.service';
+import { IPaginationDto } from '_root/config/pagination.dto';
 import {
-  BuildingFilterDto,
-  CreateBuildingDto,
-  UpdateBuildingDto,
-} from '_root/modules/building/building.dto';
-import { API_URL } from '_root/config/api';
-import { CLOUDINARY_FOLDER_NAME } from '_root/config/enum';
+  CreateLandDto,
+  LandFilterDto,
+  UpdateLandDto,
+} from '_root/modules/land/land.dto';
 import { AgencyService } from '_root/modules/agency/agency.service';
 import { UploadsService } from '_root/modules/cloudinary/uploads.service';
+import { CLOUDINARY_FOLDER_NAME } from '_root/config/enum';
+import { convertToInteger } from '_root/config/convert';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { API_URL } from '_root/config/api';
 
 @Controller()
-export class BuildingController {
+export class LandController {
   constructor(
-    private readonly buildingService: BuildingService,
+    private readonly landService: LandService,
     private readonly agencyService: AgencyService,
     private readonly uploadFileService: UploadsService,
   ) {}
 
-  @Get(API_URL.BUILDING.ALL_BUILDING_BY_AGENCY)
-  async getBuildingByAgency(@Query() data: BuildingFilterDto) {
-    return this.buildingService.getAllBuildingByAgency(data);
+  @Get(API_URL.LAND.ALL_LAND_BY_AGENCY)
+  async getAllLands(@Query() data: LandFilterDto) {
+    return this.landService.getAllLandByAgency(data);
   }
 
+  @Post(API_URL.LAND.CREATE_LAND)
   @UseInterceptors(FileFieldsInterceptor([{ name: 'documents', maxCount: 4 }]))
-  @Post(API_URL.BUILDING.CREATE_BUILDING)
-  async createBuilding(
-    @Body('data') rawData: string,
-    @Query('ownerId') ownerId: string,
+  async createLand(
+    @Body() data: CreateLandDto,
     @UploadedFiles()
     files: {
       documents?: Express.Multer.File[];
     },
   ) {
-    const data: CreateBuildingDto = JSON.parse(rawData);
     let cloudinaryDocumentsFilesUrl: string[] = [];
     const getAgencyName = await this.agencyService.findAgency(
       data?.agencyId,
-      ownerId,
+      data?.ownerId,
     );
     if (files?.documents?.length) {
       const uploads = await Promise.all(
@@ -59,33 +59,30 @@ export class BuildingController {
           ),
         ),
       );
+
       cloudinaryDocumentsFilesUrl = uploads.map((file) => file.secure_url);
     }
-    return this.buildingService.createBuilding(
-      {
-        ...data,
-        documents: cloudinaryDocumentsFilesUrl,
-      },
-      ownerId,
-    );
+    return this.landService.createLand({
+      ...data,
+      area: convertToInteger(data?.area),
+      purchasePrice: convertToInteger(data?.purchasePrice),
+      documents: cloudinaryDocumentsFilesUrl,
+    });
   }
 
-  @Post(API_URL.BUILDING.UPDATE)
+  @Post(API_URL.LAND.UPDATE)
   @UseInterceptors(FileFieldsInterceptor([{ name: 'documents', maxCount: 4 }]))
-  async updateBuilding(
-    @Body('data') rawData: string,
-    @Query('ownerId') ownerId: string,
+  async updateLand(
+    @Body() data: UpdateLandDto,
     @UploadedFiles()
     files: {
       documents?: Express.Multer.File[];
     },
   ) {
-    const data: UpdateBuildingDto = JSON.parse(rawData);
-
     let cloudinaryDocumentsFilesUrl: string[] = [];
     const getAgencyName = await this.agencyService.findAgency(
       data?.agencyId,
-      ownerId,
+      data?.ownerId,
     );
     if (files?.documents?.length) {
       const uploads = await Promise.all(
@@ -97,21 +94,19 @@ export class BuildingController {
           ),
         ),
       );
+
       cloudinaryDocumentsFilesUrl = uploads.map((file) => file.secure_url);
     }
-
-    return this.buildingService.updateBuilding(
-      { ...data, documents: cloudinaryDocumentsFilesUrl },
-      ownerId,
-    );
+    return this.landService.updateLand({
+      ...data,
+      area: convertToInteger(data?.area),
+      purchasePrice: convertToInteger(data?.purchasePrice),
+      documents: cloudinaryDocumentsFilesUrl,
+    });
   }
 
-  @Delete(API_URL.BUILDING.DELETE)
-  async deleteBuilding(
-    @Query('ownerId') ownerId: string,
-    @Query('id') id: string,
-    @Query('agencyId') agencyId: string,
-  ) {
-    return this.buildingService.deleteBuilding(id, ownerId, agencyId);
+  @Delete(API_URL.LAND.DELETE)
+  async deleteLand() {
+    return 'Delete land not implemented';
   }
 }

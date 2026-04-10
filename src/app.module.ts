@@ -15,6 +15,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PackModule } from '_root/modules/packs/pack.module';
 import { AuthModule } from '_root/modules/auth/auth.module';
 import { BuildingModule } from '_root/modules/building/building.module';
+import { LandModule } from '_root/modules/land/land.module';
 
 @Module({
   imports: [
@@ -42,7 +43,7 @@ import { BuildingModule } from '_root/modules/building/building.module';
       throttlers: [
         {
           ttl: 10,
-          limit: 1,
+          limit: 10,
         },
       ],
     }),
@@ -53,6 +54,7 @@ import { BuildingModule } from '_root/modules/building/building.module';
     PropertyModule,
     BuildingModule,
     PackModule,
+    LandModule,
   ],
 
   providers: [

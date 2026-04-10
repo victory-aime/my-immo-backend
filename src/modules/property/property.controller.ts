@@ -58,7 +58,6 @@ export class PropertyController {
     @Body() data: propertyDto,
     @Query('ownerId') ownerId: string,
   ) {
-    console.log('data', data);
     return this.propertyService.createProperty(ownerId, {
       ...data,
     });
@@ -101,21 +100,4 @@ export class PropertyController {
   ) {
     return this.propertyService.getOccupationRateByType(ownerId, agencyId);
   }
-
-  // @Get(API_URL.PROPERTY.MONTHLY_REVENUE)
-  // @ApiOperation({
-  //   summary: 'Récupérer les revenues par propriétés actuellement fake API',
-  // })
-  // @ApiOkResponse({
-  //   description: 'Stats envoyée avec success',
-  // })
-  // @ApiBadRequestResponse({
-  //   description: 'Une erreur est survenue réessayer plus tard',
-  // })
-  // async monthlyRevenue(
-  //   @Query('ownerId') ownerId: string,
-  //   @Query('agencyId') agencyId: string,
-  // ) {
-  //   return this.propertyService.getMonthlyRevenue(ownerId, agencyId);
-  // }
 }

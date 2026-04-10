@@ -221,6 +221,8 @@ model Land {
   area          Float
   city          String
   district      String?
+  address       String?
+  landOwner     String?
   status        LandStatus @default(AVAILABLE)
   documents     String[]
 
@@ -234,6 +236,7 @@ model Land {
   updatedAt DateTime @updatedAt
 
   @@map("terrains")
+  @@unique([title, agencyId])
 }
 
 model Batiment {

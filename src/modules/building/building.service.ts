@@ -8,6 +8,7 @@ import { PrismaService } from '_root/database/prisma.service';
 import { HttpError } from '_root/config/http.error';
 import { AgencyService } from '_root/modules/agency/agency.service';
 import { convertToInteger } from '_root/config/convert';
+import { Prisma } from '../../../prisma/generated/client';
 
 @Injectable()
 export class BuildingService {
@@ -29,7 +30,12 @@ export class BuildingService {
 
     const buildingFilterOptions = {
       ...{ agencyId: query?.agencyId },
-      ...(query.name && { name: query.name }),
+      ...(query?.name && {
+        title: {
+          contains: query.name,
+          mode: Prisma.QueryMode.insensitive,
+        },
+      }),
       ...(query.city && { city: query.city }),
       ...(query.status && { status: query.status }),
     };
@@ -37,7 +43,15 @@ export class BuildingService {
     const [data, total] = await this.prisma.$transaction([
       this.prisma.batiment.findMany({
         where: buildingFilterOptions,
-        include: { properties: true },
+        include: {
+          properties: true,
+          land: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
         orderBy: {
           createdAt: 'desc',
         },
@@ -85,7 +99,7 @@ export class BuildingService {
     });
 
     return {
-      message: 'Bâtiment créée avec succès',
+      message: 'Bâtiment créé avec succès',
     };
   }
 
@@ -95,27 +109,76 @@ export class BuildingService {
   ): Promise<{ message: string }> {
     await this.agencyService.checkAgencyOwnership(ownerId, data.agencyId);
 
-    const findBuilding = await this.prisma.batiment.findUnique({
+    const building = await this.prisma.batiment.findUnique({
       where: { id: data.id },
     });
 
-    if (!findBuilding) {
+    if (!building) {
       throw new HttpError(
         'Aucun bâtiment trouvé',
         HttpStatus.NOT_FOUND,
-        'BATIMENT_NOT_EXIST',
+        'BUILDING_NOT_EXIST',
       );
     }
 
+    if (data.name && data.name !== building.name) {
+      const existing = await this.prisma.batiment.findUnique({
+        where: {
+          name_agencyId: {
+            name: data.name,
+            agencyId: building.agencyId!,
+          },
+        },
+      });
+
+      if (existing) {
+        throw new HttpError(
+          'Un bâtiment avec ce nom existe déjà',
+          HttpStatus.CONFLICT,
+          'BUILDING_ALREADY_EXISTS',
+        );
+      }
+    }
+
+    if (data?.landId && data.landId !== building.landId) {
+      const land = await this.prisma.land.findUnique({
+        where: { id: data.landId },
+      });
+
+      if (!land) {
+        throw new HttpError(
+          'Terrain introuvable',
+          HttpStatus.NOT_FOUND,
+          'LAND_NOT_FOUND',
+        );
+      }
+    }
+
+    // 5. Clean payload
+    const { id, agencyId, landId, ...values } = data;
+
+    // 6. Update
     await this.prisma.batiment.update({
-      where: { id: data?.id },
+      where: { id },
       data: {
-        ...data,
-        landId: data.landId && data.landId !== '' ? data.landId : undefined,
+        ...values,
+        agency: { connect: { id: agencyId } },
+        ...(landId
+          ? {
+              land: {
+                connect: { id: landId },
+              },
+            }
+          : {
+              land: {
+                disconnect: true,
+              },
+            }),
       },
     });
+
     return {
-      message: 'Bâtiment mis a jour avec succès',
+      message: 'Bâtiment mis à jour avec succès',
     };
   }
 

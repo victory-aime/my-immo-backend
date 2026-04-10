@@ -7,6 +7,7 @@ import {
 import { HttpError } from '_root/config/http.error';
 import { AgencyService } from '_root/modules/agency/agency.service';
 import { convertToInteger } from '_root/config/convert';
+import { Prisma } from '../../../prisma/generated/client';
 
 @Injectable()
 export class PropertyService {
@@ -28,7 +29,12 @@ export class PropertyService {
 
     const propertyFilterOptions = {
       ...{ agencyId: query?.agencyId },
-      ...(query.title && { name: query.title }),
+      ...(query?.name && {
+        title: {
+          contains: query.name,
+          mode: Prisma.QueryMode.insensitive,
+        },
+      }),
       ...(query.type && { city: query.type }),
       ...(query.status && { status: query.status }),
     };
@@ -225,13 +231,6 @@ export class PropertyService {
 
     const { agencyId, batimentId, ...safeValues } = data;
 
-    const relationData =
-      batimentId !== undefined
-        ? batimentId === null
-          ? { batiment: { disconnect: true } } // 🔥 retirer bâtiment
-          : { batiment: { connect: { id: batimentId } } } // 🔥 lier bâtiment
-        : {};
-
     await this.prisma.property.update({
       where: { id: propertyId },
       data: {
@@ -239,12 +238,22 @@ export class PropertyService {
         agency: {
           connect: { id: agencyId },
         },
-        ...relationData,
+        ...(batimentId
+          ? {
+              batiment: {
+                connect: { id: batimentId },
+              },
+            }
+          : {
+              batiment: {
+                disconnect: true,
+              },
+            }),
       },
     });
 
     return {
-      message: 'Propriété créée avec succès',
+      message: 'Propriété mis a jour avec succès',
     };
   }
 
