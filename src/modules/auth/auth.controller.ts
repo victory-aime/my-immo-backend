@@ -8,6 +8,11 @@ import {
 } from './auth.dto';
 import { API_URL } from '_root/config/api';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import {
+  ApiBadRequestResponse,
+  ApiOkResponse,
+  ApiOperation,
+} from '@nestjs/swagger';
 
 @Controller()
 @AllowAnonymous()
@@ -23,6 +28,7 @@ export class AuthController {
   @Post(API_URL.AUTH.FORGOT_PASSWORD)
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() body: ForgotPasswordDto) {
+    console.log(body);
     return this.authService.forgotPassword(body);
   }
 
@@ -36,5 +42,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() body: ResetPasswordDto) {
     return this.authService.resetPassword(body);
+  }
+
+  @Post(API_URL.AUTH.CHECK_EMAIL)
+  @ApiOperation({ summary: 'Verifier un email' })
+  @ApiOkResponse({
+    description: 'return un boolean',
+  })
+  @ApiBadRequestResponse({
+    description: 'Une erreur est survenue réessayer plus tard',
+  })
+  async checkUserEmail(@Body() data: { email: string }) {
+    return this.authService.checkUserEmail(data?.email);
   }
 }

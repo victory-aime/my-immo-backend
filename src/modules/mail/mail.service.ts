@@ -1,70 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { EmailTemplatePayload } from './types/mail-template.type';
-import { MailerService } from '@nestjs-modules/mailer';
-import { CompileTemplateService } from './utils/compile-templates';
+import { ResendService } from './resend.service';
 
 @Injectable()
 export class EmailService {
   /**
-   * Service to send emails using the MailerService.
-   * It compiles email templates and sends them to specified recipients.
+   * Service to send emails using the ResendService.
+   * It used email templates in resend config and sends them to specified recipients.
    */
-  constructor(
-    private readonly mailService: MailerService,
-    private readonly compileTemplate: CompileTemplateService,
-  ) {}
+  constructor(private readonly resendService: ResendService) {}
 
-  async sendEmailVerificationLink(
-    emailDto: EmailTemplatePayload,
-    context: {
-      verificationUrl: string;
-      expireTime: number | string;
-      username: string;
-    },
-  ): Promise<void> {
-    const { recipients, subject } = emailDto;
-    const html = await this.compileTemplate.compileTemplate(
-      'hbs',
-      'email-verification',
-      context,
-    );
+  async sendEmailVerificationLink(data: EmailTemplatePayload): Promise<void> {
+    const { sendTo, link, username } = data;
     try {
-      const mailOptions = {
-        from: process.env.GOOGLE_CLIENT_EMAIL,
-        replyTo: process.env.GOOGLE_CLIENT_EMAIL,
-        to: recipients,
-        subject,
-        html,
-      };
-      await this.mailService.sendMail(mailOptions);
+      await this.resendService.sendEmailVerification(sendTo, username, link);
     } catch (error) {
       throw new Error(`Error sending email: ${error}`);
     }
   }
 
-  async sendResetPasswordEmailLink(
-    emailDto: EmailTemplatePayload,
-    context: {
-      resetPasswordUrl: string;
-      expireTime: string | number;
-      username: string;
-    },
-  ): Promise<void> {
-    const { recipients, subject } = emailDto;
-    const html = await this.compileTemplate.compileTemplate(
-      'hbs',
-      'reset-password',
-      context,
-    );
+  async sendResetPasswordEmailLink(data: EmailTemplatePayload): Promise<void> {
+    const { sendTo, link, username } = data;
     try {
-      const mailOptions = {
-        from: process.env.GOOGLE_CLIENT_EMAIL,
-        replyTo: process.env.GOOGLE_CLIENT_EMAIL,
-        to: recipients,
-        subject,
-        html,
-      };
-      await this.mailService.sendMail(mailOptions);
+      await this.resendService.sendResetPassword(sendTo, username, link);
     } catch (error) {
       throw new Error(`Error sending email: ${error}`);
     }

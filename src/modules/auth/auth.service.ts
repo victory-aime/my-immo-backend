@@ -112,7 +112,6 @@ export class AuthService {
       const response = await auth.api.requestPasswordReset({
         body: {
           email: data.email,
-          redirectTo: data.callbackURL,
         },
       });
 
@@ -165,8 +164,15 @@ export class AuthService {
       }
       console.error('Erreur resetPassword:', error);
       throw new HttpError(
-        'Une erreur interne est survenue. Veuillez réessayer plus tard.',
+        'Lien invalide ou expiré.',
+        HttpStatus.BAD_REQUEST,
+        'INVALID_TOKEN',
       );
     }
+  }
+
+  async checkUserEmail(email: string): Promise<boolean> {
+    const user = await this.usersService.findUser({ email });
+    return !!user;
   }
 }

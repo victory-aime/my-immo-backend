@@ -23,9 +23,6 @@ export class ResendVerificationDto {
 export class ForgotPasswordDto {
   @IsEmail()
   email: string;
-
-  @IsString()
-  callbackURL: string;
 }
 
 export class ResetPasswordDto {

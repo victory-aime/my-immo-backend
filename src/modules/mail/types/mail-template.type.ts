@@ -1,23 +1,50 @@
-import { Address } from '@nestjs-modules/mailer/dist/interfaces/send-mail-options.interface';
+import { EMAIL_TEMPLATE_ID } from '../utils/mail';
 
-export type EmailTemplateType = 'reset-password' | 'welcome';
+export type TemplateVariables = {
+  [EMAIL_TEMPLATE_ID.OTP]: {
+    otp_code: string;
+  };
+  [EMAIL_TEMPLATE_ID.WELCOME]: {
+    username: string;
+    app_name: string;
+    login_url: string;
+  };
+  [EMAIL_TEMPLATE_ID.RESET_PASSWORD]: {
+    EXPIRE_TIME: string;
+    RESET_LINK?: string;
+    USERNAME?: string;
+    APP_NAME?: string;
+  };
+  [EMAIL_TEMPLATE_ID.EMAIL_VERIFY]: {
+    FROM_CLIENT_EMAIL?: string;
+    SUBJECT?: string;
+    EXPIRE_TIME: string;
+    VERIFY_EMAIL_LINK?: string;
+    USERNAME?: string;
+    APP_NAME?: string;
+  };
+};
 
-export class EmailTemplatePayload {
-  sender?: string | Address;
-  recipients?: string | Address | Address[];
-  subject?: string;
-  cc?: string[];
-  bcc?: string[];
-  text?: string;
-  html?: string;
-  message?: string;
-  attachments?: Attachment[];
-  type?: EmailTemplateType;
+export class SendTemplateEmailOptions<T extends EMAIL_TEMPLATE_ID> {
+  to: string | string[];
+  template: T;
+  subject: string;
+  variables: TemplateVariables[T];
+  replyTo?: string;
+  tags?: { name: string; value: string }[];
 }
 
-class Attachment {
-  filename: string;
-  path?: string;
-  content?: string | Buffer;
-  contentType?: string;
+export class EmailResult {
+  success: boolean;
+  messageId?: string;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+export class EmailTemplatePayload {
+  sendTo: string;
+  username: string;
+  link: string;
 }
