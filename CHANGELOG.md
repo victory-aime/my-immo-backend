@@ -1,3 +1,13 @@
+# [1.6.0](https://github.com/victory-aime/my-immo-backend/compare/v1.5.0...v1.6.0) (2026-04-13)
+
+
+### Features
+
+* **building:** building-module ([c43ef8b](https://github.com/victory-aime/my-immo-backend/commit/c43ef8bad0a4b081ba0b9391d2006d75fad428a1))
+* **email:** integrate Resend service with template-based emails ([e12b618](https://github.com/victory-aime/my-immo-backend/commit/e12b618894c96881be9580eb50b3d0040663e913))
+* **land:** add initial land module ([7b4141b](https://github.com/victory-aime/my-immo-backend/commit/7b4141bc182bb27d791f74163e878d890e21c897))
+* **resend-invitatio:** resend sevice and invitation module ([2051f89](https://github.com/victory-aime/my-immo-backend/commit/2051f89197cc03a2fbab025189bcd0727632bc5e))
+
 # [1.5.0](https://github.com/victory-aime/my-immo-backend/compare/v1.4.1...v1.5.0) (2026-04-06)
 
 ### Bug Fixes
