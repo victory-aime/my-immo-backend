@@ -10,6 +10,8 @@ enum APIS_URL_GLOBAL_PATH {
   AUTH = 'auth',
   BUILDING = 'building',
   LAND = 'land',
+  COMMON = 'common',
+  PERMS = 'perms',
 }
 
 enum CLOUDINARY_FOLDER_NAME {

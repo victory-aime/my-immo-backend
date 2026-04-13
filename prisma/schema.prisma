@@ -204,6 +204,7 @@ model Agency {
   batiment              Batiment[]
   villas                Villa[]
   properties            Property[]
+  invitations           Invitation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -235,8 +236,8 @@ model Land {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("terrains")
   @@unique([title, agencyId])
+  @@map("terrains")
 }
 
 model Batiment {
@@ -292,8 +293,8 @@ model Property {
   id             String         @id @default(uuid())
   title          String
   type           PropertyType
-  price          Decimal        @db.Decimal(10, 2) @default(0)
-  caution        Decimal        @db.Decimal(10, 2) @default(0)
+  price          Decimal        @default(0) @db.Decimal(10, 2)
+  caution        Decimal        @default(0) @db.Decimal(10, 2)
   propertyNumber String?
   propertyOwner  String?
   address        String?
@@ -543,6 +544,45 @@ model TransactionCommission {
 }
 
 // ─────────────────────────────────────────
+// INVITATION
+// ─────────────────────────────────────────
+model Invitation {
+  id                String           @id @default(uuid())
+  name              String
+  email             String           @unique
+  temporaryPassword String
+  agencyId          String
+  agencyRole        AgencyRole       @default(MEMBER)
+  token             String           @unique @default(uuid())
+  status            InvitationStatus @default(PENDING)
+  invitedBy         String // userId de l'admin
+
+  // Permissions pré-configurées par l'admin au moment de l'invite
+  permissions InvitationPermission[]
+
+  agency Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([email, agencyId])
+  @@map("invitation")
+}
+
+model InvitationPermission {
+  id           String  @id @default(uuid())
+  invitationId String
+  permissionId String?
+  granted      Boolean @default(true)
+
+  invitation Invitation  @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  Permission Permission? @relation(fields: [permissionId], references: [id])
+
+  @@unique([invitationId, permissionId])
+  @@map("invitation_permission")
+}
+
+// ─────────────────────────────────────────
 // ABONNEMENTS & RBAC
 // ─────────────────────────────────────────
 
@@ -579,14 +619,29 @@ model SubscriptionPlan {
 
 model Feature {
   id          String          @id @default(uuid())
-  name        String // ex: "manage_properties", "view_reports"
+  name        String          @unique // ex: "manage_properties", "view_reports"
   description String?
   category    FeatureCategory
 
-  planFeatures     PlanFeature[]
-  staffPermissions StaffPermission[]
+  permissions  Permission[]
+  planFeatures PlanFeature[]
 
   @@map("feature")
+}
+
+// 🆕 Les actions granulaires à l'intérieur d'une feature
+model Permission {
+  id          String  @id @default(uuid())
+  name        String  @unique // "update_users", "delete_users", "view_users"
+  description String?
+
+  featureId String
+  feature   Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  staffPermissions      StaffPermission[]
+  invitationPermissions InvitationPermission[]
+
+  @@map("permission")
 }
 
 model PlanFeature {
@@ -604,17 +659,18 @@ model PlanFeature {
 }
 
 model StaffPermission {
-  id        String  @id @default(uuid())
-  staffId   String
-  staff     Staff   @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  featureId String
-  feature   Feature @relation(fields: [featureId], references: [id])
-  granted   Boolean @default(true)
+  id           String  @id @default(uuid())
+  staffId      String
+  permissionId String?
 
+  granted   Boolean  @default(true)
   grantedBy String?
   grantedAt DateTime @default(now())
 
-  @@unique([staffId, featureId])
+  staff      Staff       @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  permission Permission? @relation(fields: [permissionId], references: [id])
+
+  @@unique([staffId, permissionId])
   @@map("staff_permission")
 }
 
@@ -684,6 +740,14 @@ enum AgencyRole {
   AGENCY_ADMIN
   AGENT
   ACCOUNTANT
+  MEMBER
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
 }
 
 enum AgencyStatus {

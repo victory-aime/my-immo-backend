@@ -16,6 +16,7 @@ import { PackModule } from '_root/modules/packs/pack.module';
 import { AuthModule } from '_root/modules/auth/auth.module';
 import { BuildingModule } from '_root/modules/building/building.module';
 import { LandModule } from '_root/modules/land/land.module';
+import { CommonModule } from '_root/modules/common/common.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { LandModule } from '_root/modules/land/land.module';
     BuildingModule,
     PackModule,
     LandModule,
+    CommonModule,
   ],
 
   providers: [

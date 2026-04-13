@@ -62,6 +62,7 @@ export const API_URL = {
     CHECK_EMAIL: `${BASE_APIS_URL.UNSECURED}/${APIS_URL_GLOBAL_PATH.USERS}/verified-email`,
   },
   COMMON: {
+    PERMS: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.COMMON}/${APIS_URL_GLOBAL_PATH.PERMS}`,
     INVOICE: {
       GENERATE: `${BASE_APIS_URL.SECURED}/invoice/generate`,
     },
