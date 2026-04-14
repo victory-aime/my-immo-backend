@@ -18,10 +18,7 @@ export class LandService {
   ) {}
 
   async getAllLandByAgency(query: LandFilterDto) {
-    await this.agencyService.checkAgencyOwnership(
-      query?.ownerId,
-      query?.agencyId,
-    );
+    await this.agencyService.checkAgencyOwnership(query?.agencyId);
 
     const pageInitial = convertToInteger(query?.initialPage) || 1;
     const limitPage = convertToInteger(query?.limitPerPage) || 10;
@@ -66,7 +63,7 @@ export class LandService {
   }
 
   async createLand(data: CreateLandDto): Promise<{ message: string }> {
-    await this.agencyService.checkAgencyOwnership(data?.ownerId, data.agencyId);
+    await this.agencyService.checkAgencyOwnership(data.agencyId);
 
     const { ownerId, ...safeValues } = data;
     const uniqueName = await this.prisma.land.findUnique({
@@ -95,10 +92,7 @@ export class LandService {
   }
 
   async updateLand(data: UpdateLandDto): Promise<{ message: string }> {
-    await this.agencyService.checkAgencyOwnership(
-      data?.ownerId,
-      data.agencyId!,
-    );
+    await this.agencyService.checkAgencyOwnership(data.agencyId);
 
     const { ownerId, agencyId, ...safeValues } = data;
 

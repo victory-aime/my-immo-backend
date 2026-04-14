@@ -1,32 +1,33 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
-import { AgencyRole } from '../../../prisma/generated/enums';
 import { getAuthInstance } from '_root/lib/auth';
 import { decryptPassword, encryptPassword } from '_root/config/crypto';
+import { ResendService } from '_root/modules/mail/resend.service';
+import { EXPIRE_TIME } from '_root/config/enum';
+import { CreateInvitationDto } from '_root/modules/invitations/invitation.dto';
+import { HttpError } from '_root/config/http.error';
 
 @Injectable()
 export class InvitationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly resendService: ResendService,
+  ) {}
 
-  // invitation.service.ts
+  async getAllInviteByAgencyId(agencyId: string) {
+    return this.prisma.invitation.findMany({
+      where: {
+        agencyId,
+      },
+    });
+  }
 
-  async createInvitation(
-    adminUserId: string,
-    agencyId: string,
-    dto: {
-      name: string;
-      temporaryPassword: string;
-      email: string;
-      role: AgencyRole;
-      permissions: { permissionId: string; granted: boolean }[];
-    },
-  ) {
-    // 1. Vérifier que l'admin appartient bien à l'agence
-    const admin = await this.prisma.staff.findFirstOrThrow({
-      where: { userId: adminUserId, agencyId, agencyRole: 'AGENCY_ADMIN' },
+  async createInvitation({ adminId, agencyId, payload }: CreateInvitationDto) {
+    const agency = await this.prisma.agency.findUniqueOrThrow({
+      where: { id: agencyId },
     });
 
-    // 2. Récupérer les features accessibles par le plan de l'agence
+    // 1. Features autorisées par le plan actif de l'agence
     const agencyPlanFeatures = await this.prisma.planFeature.findMany({
       where: {
         enabled: true,
@@ -36,34 +37,43 @@ export class InvitationService {
       },
       select: { featureId: true },
     });
-
     const allowedFeatureIds = new Set(
       agencyPlanFeatures.map((f) => f.featureId),
     );
 
-    // 3. Valider que les permissions demandées sont dans le plan
-    const invalidPerms = dto.permissions.filter(
-      (p) => !allowedFeatureIds.has(p.permissionId),
+    // 2. Récupérer les permissions demandées avec leur featureId parent
+    const requestedPermissions = await this.prisma.permission.findMany({
+      where: {
+        id: { in: payload.permissions.map((p) => p.permissionId) },
+      },
+      select: { id: true, featureId: true },
+    });
+
+    // 3. Valider que chaque permission appartient à une feature du plan
+    const invalidPerms = requestedPermissions.filter(
+      (p) => !allowedFeatureIds.has(p.featureId),
     );
     if (invalidPerms.length > 0) {
-      throw new Error(`Ces features ne sont pas incluses dans votre plan.`);
+      throw new BadRequestException(
+        'Certaines permissions ne sont pas incluses dans votre plan.',
+      );
     }
 
-    // 4. Créer l'invitation avec les permissions pré-configurées
-    // 5. Envoyer l'email avec le token
-    //await sendInvitationEmail(dto.email, invitation.token);
+    // 4. Générer le mot de passe côté serveur (jamais côté client)
+    const encryptedPassword = encryptPassword(payload.temporaryPassword);
 
-    return this.prisma.invitation.create({
+    // 5. Créer l'invitation avec les permissions pré-configurées
+    const invitation = await this.prisma.invitation.create({
       data: {
-        name: dto.name,
-        email: dto.email,
-        temporaryPassword: encryptPassword(dto.temporaryPassword),
+        name: payload.name,
+        email: payload.email,
+        temporaryPassword: encryptedPassword,
         agencyId,
-        agencyRole: dto.role,
-        invitedBy: adminUserId,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours
+        agencyRole: payload.role,
+        invitedBy: adminId,
+        expiresAt: new Date(Date.now() + EXPIRE_TIME._7_DAYS * 1000),
         permissions: {
-          create: dto.permissions.map((p) => ({
+          create: payload.permissions.map((p) => ({
             permissionId: p.permissionId,
             granted: p.granted,
           })),
@@ -71,28 +81,54 @@ export class InvitationService {
       },
       include: { permissions: true },
     });
+
+    // 6. Envoyer l'email avec le mot de passe en clair
+    await this.resendService.sendInvitationEmail({
+      sendTo: invitation.email,
+      email: invitation.email,
+      password: payload.temporaryPassword,
+      token: invitation.token,
+      agencyName: agency.name,
+      username: invitation.name,
+    });
+
+    return {
+      message: 'Invitation envoyée avec succès.',
+    };
   }
 
-  async acceptInvitation(token: string, userId: string) {
+  async acceptInvitation(token: string) {
     // 1. Valider le token
     const invitation = await this.prisma.invitation.findUniqueOrThrow({
       where: { token },
-      include: { permissions: true },
+      include: {
+        permissions: {
+          include: {
+            Permission: { select: { featureId: true } }, // 🔑 on remonte au featureId
+          },
+        },
+      },
     });
 
+    console.log('invitation', invitation);
+
     if (invitation.status !== 'PENDING') {
-      throw new Error('Invitation déjà utilisée ou annulée.');
+      throw new HttpError(
+        'Invitation déjà utilisée ou annulée.',
+        HttpStatus.BAD_REQUEST,
+        'INVITATION_ALREADY_USED_OR_CANCELLED',
+      );
     }
     if (invitation.expiresAt < new Date()) {
       await this.prisma.invitation.update({
         where: { id: invitation.id },
         data: { status: 'EXPIRED' },
       });
-      throw new Error('Invitation expirée.');
+      throw new BadRequestException('Invitation expirée.');
     }
 
-    // 2. Vérifier que le plan autorise toujours ces features
-    //    (le plan peut avoir changé entre l'invite et l'acceptation)
+    // 2. Features encore autorisées au moment de l'acceptation
+    //    (le plan a pu changer entre l'invitation et l'acceptation)
     const currentPlanFeatures = await this.prisma.planFeature.findMany({
       where: {
         enabled: true,
@@ -104,10 +140,12 @@ export class InvitationService {
       },
       select: { featureId: true },
     });
-    const currentAllowed = new Set(currentPlanFeatures.map((f) => f.featureId));
+    const currentAllowedFeatureIds = new Set(
+      currentPlanFeatures.map((f) => f.featureId),
+    );
 
-    // 3. Créer le Staff + ses permissions dans une transaction
     return this.prisma.$transaction(async (tx) => {
+      // 3. Créer le User via better-auth
       const auth = getAuthInstance();
       const { user } = await auth.api.signUpEmail({
         body: {
@@ -116,17 +154,19 @@ export class InvitationService {
           name: invitation.name,
         },
       });
+
+      // 4. Créer le Staff
       const newStaff = await tx.staff.create({
         data: {
-          userId: user?.id,
+          userId: user.id,
           agencyId: invitation.agencyId,
           agencyRole: invitation.agencyRole,
         },
       });
 
-      // Filtrer les permissions encore valides selon le plan actuel
+      // 5. Filtrer les permissions dont la feature parente est encore dans le plan
       const validPermissions = invitation.permissions.filter((p) =>
-        currentAllowed.has(p.permissionId ?? ''),
+        currentAllowedFeatureIds.has(p?.Permission?.featureId!),
       );
 
       await tx.staffPermission.createMany({
@@ -138,13 +178,38 @@ export class InvitationService {
         })),
       });
 
-      // Marquer l'invitation comme acceptée
-      await tx.invitation.update({
-        where: { id: invitation.id },
-        data: { status: 'ACCEPTED' },
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          role: invitation.agencyRole,
+        },
       });
 
-      return newStaff;
+      // 6. Clôturer l'invitation et effacer le mot de passe chiffré
+      await tx.invitation.update({
+        where: { id: invitation.id },
+        data: {
+          status: 'ACCEPTED',
+          temporaryPassword: null, // plus utile après création du compte
+        },
+      });
+      return {
+        email: user.email,
+        password: decryptPassword(invitation.temporaryPassword),
+      };
     });
+  }
+
+  async cancelledInvitation(id: string) {
+    await this.prisma.invitation.update({
+      where: { id },
+      data: {
+        status: 'CANCELLED',
+        temporaryPassword: null,
+      },
+    });
+    return {
+      message: 'Invitation annulée avec succès.',
+    };
   }
 }

@@ -18,10 +18,7 @@ export class BuildingService {
   ) {}
 
   async getAllBuildingByAgency(query: BuildingFilterDto) {
-    await this.agencyService.checkAgencyOwnership(
-      query?.ownerId,
-      query?.agencyId,
-    );
+    await this.agencyService.checkAgencyOwnership(query?.agencyId);
 
     const pageInitial = convertToInteger(query?.initialPage) || 1;
     const limitPage = convertToInteger(query?.limitPerPage) || 10;
@@ -77,7 +74,7 @@ export class BuildingService {
     data: CreateBuildingDto,
     ownerId: string,
   ): Promise<{ message: string }> {
-    await this.agencyService.checkAgencyOwnership(ownerId, data.agencyId);
+    await this.agencyService.checkAgencyOwnership(data.agencyId);
 
     const uniqueName = await this.prisma.batiment.findUnique({
       where: { name_agencyId: { name: data?.name, agencyId: data?.agencyId } },
@@ -107,7 +104,7 @@ export class BuildingService {
     data: UpdateBuildingDto,
     ownerId: string,
   ): Promise<{ message: string }> {
-    await this.agencyService.checkAgencyOwnership(ownerId, data.agencyId);
+    await this.agencyService.checkAgencyOwnership(data.agencyId);
 
     const building = await this.prisma.batiment.findUnique({
       where: { id: data.id },
@@ -182,8 +179,8 @@ export class BuildingService {
     };
   }
 
-  async deleteBuilding(id: string, ownerId: string, agencyId: string) {
-    await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
+  async deleteBuilding(id: string, agencyId: string) {
+    await this.agencyService.checkAgencyOwnership(agencyId);
     await this.prisma.batiment.delete({
       where: { id },
     });

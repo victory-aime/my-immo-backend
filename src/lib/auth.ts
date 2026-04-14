@@ -1,20 +1,14 @@
 import 'dotenv/config';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { PrismaClient } from '../../prisma/generated/client';
-import { PrismaPg } from '@prisma/adapter-pg';
 import { EXPIRE_TIME } from '../config/enum';
 import { twoFactor } from 'better-auth/plugins';
 import { passkey } from '@better-auth/passkey';
 import { expo } from '@better-auth/expo';
 import { authEmailBridge } from '../modules/auth/auth-email.bridge';
 import { formatExpiresIn } from '../modules/mail/utils/getExpiresTime';
-
-export const betterAuthPrisma = new PrismaClient({
-  adapter: new PrismaPg({
-    connectionString: process.env.DATABASE_URL!,
-  }),
-});
+import { prisma } from '../../prisma/seed/client';
+import { customSession } from 'better-auth/plugins/custom-session';
 
 // ─────────────────────────────────────────
 // INSTANCE SINGLETON
@@ -45,10 +39,12 @@ export const createAuth = (): ReturnType<typeof betterAuth> => {
   return betterAuth({
     appName: process.env.APP_NAME,
     baseURL: process.env.BETTER_AUTH_URL,
-    database: prismaAdapter(betterAuthPrisma, {
+    database: prismaAdapter(prisma, {
       provider: 'postgresql',
     }),
     session: {
+      deferSessionRefresh: true,
+      //disableSessionRefresh: true,
       cookieCache: {
         enabled: true,
         maxAge: EXPIRE_TIME._30_MINUTES,
@@ -67,6 +63,7 @@ export const createAuth = (): ReturnType<typeof betterAuth> => {
         },
       },
     },
+
     emailVerification: {
       sendOnSignUp: true,
       autoSignInAfterVerification: true,
@@ -109,6 +106,41 @@ export const createAuth = (): ReturnType<typeof betterAuth> => {
     },
 
     plugins: [
+      customSession(async ({ user, session }) => {
+        const staff = await prisma.staff.findFirst({
+          where: { userId: user.id, isActive: true },
+          include: {
+            permissions: {
+              where: { granted: true },
+              include: {
+                permission: {
+                  select: {
+                    name: true,
+                    feature: {
+                      select: { name: true, category: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const permissions =
+          staff?.permissions.map((p) => ({
+            name: p.permission?.name,
+            feature: p.permission?.feature.name,
+            category: p.permission?.feature.category,
+          })) || [];
+
+        return {
+          user,
+          session: {
+            ...session,
+            permissions,
+          },
+        };
+      }),
       twoFactor({
         issuer: process.env.APP_NAME,
         skipVerificationOnEnable: true,

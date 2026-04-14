@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { API_URL } from '_root/config/api';
 import {
   ApiBadRequestResponse,
@@ -9,16 +9,22 @@ import {
 } from '@nestjs/swagger';
 import { propertyDto, PropertyFilterDto } from './property.dto';
 import { PropertyService } from './property.service';
-import { convertToInteger } from '_root/config/convert';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { AllowAnonymous, AuthGuard } from '@thallesp/nestjs-better-auth';
 import { Throttle } from '@nestjs/throttler';
+import {
+  PermissionGuard,
+  RequirePermission,
+} from '_root/guard/permission.guard';
 
 @Controller()
 @ApiBearerAuth()
 export class PropertyController {
   constructor(private readonly propertyService: PropertyService) {}
+
   @Throttle({ default: { limit: 3, ttl: 60 } })
   @Get(API_URL.PROPERTY.ALL_PROPERTIES_BY_AGENCY)
+  @UseGuards(AuthGuard, PermissionGuard)
+  @RequirePermission('view_properties')
   @ApiOperation({ summary: 'Récupérer toutes les propriétés' })
   @ApiOkResponse({
     description: 'Liste des propriétés récupérée avec success',
@@ -44,6 +50,8 @@ export class PropertyController {
   }
 
   @Post(API_URL.PROPERTY.CREATE_PROPERTY)
+  @UseGuards(AuthGuard, PermissionGuard)
+  @RequirePermission('create_property')
   @ApiOperation({ summary: 'Créer une nouvelle propriété' })
   @ApiBody({
     type: propertyDto,

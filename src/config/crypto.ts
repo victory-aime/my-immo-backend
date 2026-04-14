@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 const ALGORITHM = 'aes-256-cbc';
 const SECRET_KEY = process.env.INVITATION_ENCRYPTION_KEY!; // 32 bytes en hex

@@ -28,8 +28,8 @@ export class AgencyService {
   // HELPERS PRIVÉS
   // ─────────────────────────────────────────
 
-  async findAgency(agencyId: string, ownerId: string) {
-    if (!ownerId || !agencyId) {
+  async findAgency(agencyId: string) {
+    if (!agencyId) {
       throw new HttpError(
         'Certains informations sont manquantes',
         HttpStatus.BAD_REQUEST,
@@ -37,12 +37,54 @@ export class AgencyService {
       );
     }
     const agency = await this.prismaService.agency.findUnique({
-      where: { id: agencyId, ownerId },
+      where: { id: agencyId },
     });
     if (!agency) {
       throw new NotFoundException('Agency not found');
     }
     return agency;
+  }
+
+  async getAgencyPlanFeatures(agencyId: string) {
+    const subscription = await this.prismaService.subscription.findUnique({
+      where: { agencyId },
+      include: {
+        plan: {
+          include: {
+            planFeatures: {
+              where: { enabled: true },
+              include: {
+                feature: {
+                  select: {
+                    id: true,
+                    name: true,
+                    category: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!subscription) {
+      return {
+        features: [],
+      };
+    }
+
+    const features = subscription.plan.planFeatures.map((pf) => ({
+      id: pf.feature.id,
+      name: pf.feature.name,
+      category: pf.feature.category,
+      limit: pf.limit,
+    }));
+
+    return {
+      plan: subscription.plan.name,
+      features,
+    };
   }
 
   // Récupère le plan actif en base, lève une erreur explicite s'il est absent
@@ -163,7 +205,7 @@ export class AgencyService {
 
   async updateAgency(data: updateAgencyDto): Promise<{ message: string }> {
     try {
-      const agency = await this.findAgency(data.agencyId, data.userId);
+      const agency = await this.findAgency(data.agencyId);
       await this.prismaService.agency.update({
         where: { id: agency.id },
         data: {
@@ -192,11 +234,10 @@ export class AgencyService {
 
   async changePlan(
     agencyId: string,
-    ownerId: string,
     newPlan: Plan,
   ): Promise<{ message: string }> {
     try {
-      await this.findAgency(agencyId, ownerId);
+      await this.findAgency(agencyId);
       const plan = await this.resolveActivePlan(newPlan);
 
       // @@unique([agencyId]) sur Subscription → on update directement
@@ -226,7 +267,7 @@ export class AgencyService {
   // ─────────────────────────────────────────
 
   async closeAgency(data: { agencyId: string; ownerId: string }) {
-    const agency = await this.findAgency(data.agencyId, data.ownerId);
+    const agency = await this.findAgency(data.agencyId);
 
     const owner = await this.prismaService.owner.findUnique({
       where: { id: data.ownerId },
@@ -263,8 +304,8 @@ export class AgencyService {
     return !agency;
   }
 
-  async checkAgencyOwnership(ownerId: string, agencyId: string) {
-    const agency = await this.findAgency(agencyId, ownerId);
+  async checkAgencyOwnership(agencyId: string) {
+    const agency = await this.findAgency(agencyId);
     return agency.id;
   }
 }

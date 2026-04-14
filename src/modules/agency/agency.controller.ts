@@ -23,13 +23,13 @@ import { CLOUDINARY_FOLDER_NAME } from '_root/config/enum';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
 @Controller()
+@ApiBearerAuth()
 export class AgencyController {
   constructor(
     private readonly agencyService: AgencyService,
     private readonly uploadFileService: UploadsService,
   ) {}
 
-  @ApiBearerAuth()
   @Get(API_URL.AGENCY.AGENCY_INFO)
   @ApiOperation({ summary: "Infos d'une agence" })
   @ApiOkResponse({
@@ -38,15 +38,16 @@ export class AgencyController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async agencyInfo(
-    @Query('agencyId') agencyId: string,
-    @Query('ownerId') ownerId: string,
-  ) {
-    return this.agencyService.findAgency(agencyId, ownerId);
+  async agencyInfo(@Query('agencyId') agencyId: string) {
+    return this.agencyService.findAgency(agencyId);
+  }
+
+  @Get(API_URL.AGENCY.AGENCY_SUBSCRIPTION_INFO)
+  async agencySubscriptionInfo(@Query('agencyId') agencyId: string) {
+    return this.agencyService.getAgencyPlanFeatures(agencyId);
   }
 
   @AllowAnonymous()
-  @ApiBearerAuth()
   @Post(API_URL.AGENCY.CREATE_AGENCY)
   @ApiOperation({ summary: 'Créer une agence' })
   @ApiBody({
@@ -87,7 +88,6 @@ export class AgencyController {
     });
   }
 
-  @ApiBearerAuth()
   @Post(API_URL.AGENCY.UPDATE_AGENCY)
   @ApiOperation({ summary: "Mettre a jour les informations d'une agence" })
   @ApiBody({
@@ -124,7 +124,6 @@ export class AgencyController {
     });
   }
 
-  @ApiBearerAuth()
   @Post(API_URL.AGENCY.CLOSE_AGENCY)
   @ApiOperation({ summary: 'Fermée votre agence' })
   @ApiOkResponse({
