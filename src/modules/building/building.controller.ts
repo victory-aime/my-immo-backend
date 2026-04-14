@@ -45,10 +45,7 @@ export class BuildingController {
   ) {
     const data: CreateBuildingDto = JSON.parse(rawData);
     let cloudinaryDocumentsFilesUrl: string[] = [];
-    const getAgencyName = await this.agencyService.findAgency(
-      data?.agencyId,
-      ownerId,
-    );
+    const getAgencyName = await this.agencyService.findAgency(data?.agencyId);
     if (files?.documents?.length) {
       const uploads = await Promise.all(
         files.documents.map((document) =>
@@ -83,10 +80,7 @@ export class BuildingController {
     const data: UpdateBuildingDto = JSON.parse(rawData);
 
     let cloudinaryDocumentsFilesUrl: string[] = [];
-    const getAgencyName = await this.agencyService.findAgency(
-      data?.agencyId,
-      ownerId,
-    );
+    const getAgencyName = await this.agencyService.findAgency(data?.agencyId);
     if (files?.documents?.length) {
       const uploads = await Promise.all(
         files.documents.map((document) =>
@@ -112,6 +106,6 @@ export class BuildingController {
     @Query('id') id: string,
     @Query('agencyId') agencyId: string,
   ) {
-    return this.buildingService.deleteBuilding(id, ownerId, agencyId);
+    return this.buildingService.deleteBuilding(id, agencyId);
   }
 }

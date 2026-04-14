@@ -30,9 +30,10 @@ async function seed() {
     },
     {
       name: 'publish_properties',
-      category: FeatureCategory.PROPERTIES,
+      category: FeatureCategory.ANNONCES,
       permissions: [
         { name: 'publish_property', description: 'Publier une propriété' },
+        { name: 'publish_land', description: 'Publier un terrain' },
         { name: 'unpublish_property', description: 'Dépublier une propriété' },
       ],
     },

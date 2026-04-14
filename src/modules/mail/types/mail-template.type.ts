@@ -23,6 +23,15 @@ export type TemplateVariables = {
     USERNAME?: string;
     APP_NAME?: string;
   };
+  [EMAIL_TEMPLATE_ID.INVITATION_EMAIL]: {
+    SUBJECT?: string;
+    EXPIRE_TIME: string;
+    USERNAME: string;
+    REDIRECT_LINK: string;
+    USER_EMAIL: string;
+    USER_PASSWORD: string;
+    AGENCY_NAME: string;
+  };
 };
 
 export class SendTemplateEmailOptions<T extends EMAIL_TEMPLATE_ID> {
@@ -47,4 +56,13 @@ export class EmailTemplatePayload {
   sendTo: string;
   username: string;
   link: string;
+}
+
+export class SendInviteEmailPayload {
+  sendTo: string;
+  username: string;
+  token: string;
+  email: string;
+  password: string;
+  agencyName: string;
 }

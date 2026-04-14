@@ -17,6 +17,7 @@ import { AuthModule } from '_root/modules/auth/auth.module';
 import { BuildingModule } from '_root/modules/building/building.module';
 import { LandModule } from '_root/modules/land/land.module';
 import { CommonModule } from '_root/modules/common/common.module';
+import { InvitationModule } from '_root/modules/invitations/invitation.module';
 import { AnnonceModule } from '_root/modules/annonce/annonce.module';
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { AnnonceModule } from '_root/modules/annonce/annonce.module';
     LandModule,
     CommonModule,
     AnnonceModule,
+    InvitationModule,
   ],
 
   providers: [

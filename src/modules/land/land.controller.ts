@@ -45,10 +45,7 @@ export class LandController {
     },
   ) {
     let cloudinaryDocumentsFilesUrl: string[] = [];
-    const getAgencyName = await this.agencyService.findAgency(
-      data?.agencyId,
-      data?.ownerId,
-    );
+    const getAgencyName = await this.agencyService.findAgency(data?.agencyId);
     if (files?.documents?.length) {
       const uploads = await Promise.all(
         files.documents.map((document) =>
@@ -80,10 +77,7 @@ export class LandController {
     },
   ) {
     let cloudinaryDocumentsFilesUrl: string[] = [];
-    const getAgencyName = await this.agencyService.findAgency(
-      data?.agencyId,
-      data?.ownerId,
-    );
+    const getAgencyName = await this.agencyService.findAgency(data?.agencyId);
     if (files?.documents?.length) {
       const uploads = await Promise.all(
         files.documents.map((document) =>
