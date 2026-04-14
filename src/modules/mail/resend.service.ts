@@ -5,6 +5,7 @@ import { EXPIRE_TIME } from '_root/config/enum';
 import { EMAIL_TEMPLATE_ID, EMAIL_TEMPLATE_RUNTIME_ID } from './utils/mail';
 import {
   EmailResult,
+  SendInviteEmailPayload,
   SendTemplateEmailOptions,
 } from './types/mail-template.type';
 
@@ -120,6 +121,30 @@ export class ResendService {
         VERIFY_EMAIL_LINK: link,
         USERNAME: username,
         APP_NAME: process.env.APP_NAME,
+      },
+    });
+  }
+
+  async sendInvitationEmail({
+    sendTo,
+    email,
+    password,
+    username,
+    agencyName,
+    token,
+  }: SendInviteEmailPayload): Promise<EmailResult> {
+    return this.sendTemplateEmail({
+      to: sendTo,
+      subject: 'Invitation Email',
+      template: EMAIL_TEMPLATE_ID.INVITATION_EMAIL,
+      variables: {
+        SUBJECT: 'Invitation Email',
+        EXPIRE_TIME: formatExpiresIn(EXPIRE_TIME._7_DAYS),
+        REDIRECT_LINK: `${process.env.FRONTEND_VERIFY_INVITATION_URL}/?token=${token}`,
+        USERNAME: username,
+        USER_EMAIL: email,
+        USER_PASSWORD: password,
+        AGENCY_NAME: agencyName,
       },
     });
   }

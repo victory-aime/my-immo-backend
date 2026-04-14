@@ -17,10 +17,13 @@ export class PropertyService {
   ) {}
 
   async getAllPropertyByAgency(query: PropertyFilterDto) {
-    await this.agencyService.checkAgencyOwnership(
-      query?.ownerId,
-      query?.agencyId,
-    );
+    if (!query.agencyId) {
+      throw new HttpError(
+        "L'identifiant de l'agence est requis",
+        HttpStatus.BAD_REQUEST,
+        'AGENCY_ID_REQUIRED',
+      );
+    }
 
     const pageInitial = convertToInteger(query?.initialPage) || 1;
     const limitPage = convertToInteger(query?.limitPerPage) || 10;
@@ -84,7 +87,7 @@ export class PropertyService {
     ownerId: string,
     data: propertyDto,
   ): Promise<{ message: string }> {
-    await this.agencyService.checkAgencyOwnership(ownerId, data.agencyId);
+    await this.agencyService.checkAgencyOwnership(data.agencyId);
 
     const uniqueName = await this.prisma.property.findUnique({
       where: {
@@ -169,7 +172,7 @@ export class PropertyService {
       );
     }
 
-    await this.agencyService.checkAgencyOwnership(ownerId, property.agencyId!);
+    await this.agencyService.checkAgencyOwnership(property.agencyId);
 
     // 🧠 Cas où on change le bâtiment
     if (data.batimentId) {
@@ -258,7 +261,7 @@ export class PropertyService {
   }
 
   async getOccupationRateByType1(ownerId: string, agencyId: string) {
-    await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
+    await this.agencyService.checkAgencyOwnership(agencyId);
 
     const properties = await this.prisma.property.findMany({
       where: {
@@ -304,7 +307,7 @@ export class PropertyService {
    * Stats: Taux d'occupation par type de propriété
    */
   async getOccupationRateByType(ownerId: string, agencyId: string) {
-    await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
+    await this.agencyService.checkAgencyOwnership(agencyId);
 
     const properties = await this.prisma.property.findMany({
       where: { agencyId },

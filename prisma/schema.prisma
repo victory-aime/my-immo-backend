@@ -10,11 +10,13 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ─────────────────────────────────────────
-// BETTER-AUTH MODELS
+// BETTER-AUTH MODELS & Session Permission
 // ─────────────────────────────────────────
 
 model User {
@@ -153,6 +155,7 @@ model Staff {
   createdAt DateTime @default(now())
 
   @@map("staff")
+  @@index([userId, isActive])
 }
 
 model Client {
@@ -550,9 +553,9 @@ model Invitation {
   id                String           @id @default(uuid())
   name              String
   email             String           @unique
-  temporaryPassword String
+  temporaryPassword String?
   agencyId          String
-  agencyRole        AgencyRole       @default(MEMBER)
+  agencyRole        AgencyRole       @default(AGENCY_ADMIN)
   token             String           @unique @default(uuid())
   status            InvitationStatus @default(PENDING)
   invitedBy         String // userId de l'admin
@@ -739,8 +742,6 @@ enum UserStatus {
 enum AgencyRole {
   AGENCY_ADMIN
   AGENT
-  ACCOUNTANT
-  MEMBER
 }
 
 enum InvitationStatus {
@@ -767,6 +768,7 @@ enum NotificationType {
 
 enum FeatureCategory {
   PROPERTIES
+  ANNONCES
   LEADS
   TENANTS
   ACCOUNTING
