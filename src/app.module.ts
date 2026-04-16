@@ -17,7 +17,7 @@ import { AuthModule } from '_root/modules/auth/auth.module';
 import { BuildingModule } from '_root/modules/building/building.module';
 import { LandModule } from '_root/modules/land/land.module';
 import { CommonModule } from '_root/modules/common/common.module';
-
+import { AnnonceModule } from '_root/modules/annonce/annonce.module';
 @Module({
   imports: [
     WinstonModule.forRoot({
@@ -57,6 +57,7 @@ import { CommonModule } from '_root/modules/common/common.module';
     PackModule,
     LandModule,
     CommonModule,
+    AnnonceModule,
   ],
 
   providers: [
