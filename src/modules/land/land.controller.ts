@@ -21,6 +21,7 @@ import { CLOUDINARY_FOLDER_NAME } from '_root/config/enum';
 import { convertToInteger } from '_root/config/convert';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { API_URL } from '_root/config/api';
+import { UpdateBuildingDto } from '_root/modules/building/building.dto';
 
 @Controller()
 export class LandController {
@@ -38,12 +39,14 @@ export class LandController {
   @Post(API_URL.LAND.CREATE_LAND)
   @UseInterceptors(FileFieldsInterceptor([{ name: 'documents', maxCount: 4 }]))
   async createLand(
-    @Body() data: CreateLandDto,
+    @Body('data') rawData: string,
     @UploadedFiles()
     files: {
       documents?: Express.Multer.File[];
     },
   ) {
+    const data: CreateLandDto = JSON.parse(rawData);
+
     let cloudinaryDocumentsFilesUrl: string[] = [];
     const getAgencyName = await this.agencyService.findAgency(data?.agencyId);
     if (files?.documents?.length) {
@@ -70,12 +73,14 @@ export class LandController {
   @Post(API_URL.LAND.UPDATE)
   @UseInterceptors(FileFieldsInterceptor([{ name: 'documents', maxCount: 4 }]))
   async updateLand(
-    @Body() data: UpdateLandDto,
+    @Body('data') rawData: string,
     @UploadedFiles()
     files: {
       documents?: Express.Multer.File[];
     },
   ) {
+    const data: UpdateLandDto = JSON.parse(rawData);
+
     let cloudinaryDocumentsFilesUrl: string[] = [];
     const getAgencyName = await this.agencyService.findAgency(data?.agencyId);
     if (files?.documents?.length) {

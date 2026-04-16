@@ -19,6 +19,8 @@ import { LandModule } from '_root/modules/land/land.module';
 import { CommonModule } from '_root/modules/common/common.module';
 import { InvitationModule } from '_root/modules/invitations/invitation.module';
 import { AnnonceModule } from '_root/modules/annonce/annonce.module';
+import { TeamModule } from '_root/modules/team/team.module';
+
 @Module({
   imports: [
     WinstonModule.forRoot({
@@ -60,6 +62,7 @@ import { AnnonceModule } from '_root/modules/annonce/annonce.module';
     CommonModule,
     AnnonceModule,
     InvitationModule,
+    TeamModule,
   ],
 
   providers: [

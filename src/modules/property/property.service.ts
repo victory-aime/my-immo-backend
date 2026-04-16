@@ -32,9 +32,9 @@ export class PropertyService {
 
     const propertyFilterOptions = {
       ...{ agencyId: query?.agencyId },
-      ...(query?.name && {
+      ...(query?.title && {
         title: {
-          contains: query.name,
+          contains: query.title,
           mode: Prisma.QueryMode.insensitive,
         },
       }),

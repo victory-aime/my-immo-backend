@@ -103,7 +103,7 @@ export class propertyDto {
 }
 
 export class PropertyFilterDto extends IPaginationDto {
-  name?: string;
+  title?: string;
   status?: PropertyStatus;
   type?: PropertyType;
 }

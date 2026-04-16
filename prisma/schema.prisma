@@ -154,8 +154,8 @@ model Staff {
 
   createdAt DateTime @default(now())
 
-  @@map("staff")
   @@index([userId, isActive])
+  @@map("staff")
 }
 
 model Client {
@@ -219,15 +219,16 @@ model Agency {
 // TERRAIN, PROPRIÉTÉS & BATIMENTS
 // ─────────────────────────────────────────
 model Land {
-  id            String     @id @default(uuid())
+  id            String          @id @default(uuid())
   title         String
-  purchasePrice Decimal    @db.Decimal(10, 2)
+  purchasePrice Decimal         @db.Decimal(10, 2)
   area          Float
   city          String
   district      String?
   address       String?
   landOwner     String?
-  status        LandStatus @default(AVAILABLE)
+  status        LandStatus      @default(AVAILABLE)
+  paymentType   LandPaymentType @default(CASH)
   documents     String[]
 
   agencyId String
@@ -836,6 +837,11 @@ enum LandStatus {
   AVAILABLE
   CURRENTLY_ON_SALE
   SOLD
+}
+
+enum LandPaymentType {
+  CASH
+  PARTIAL
 }
 
 enum BatimentStatus {
