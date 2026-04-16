@@ -61,6 +61,10 @@ export const createAuth = (): ReturnType<typeof betterAuth> => {
           type: 'string',
           input: false,
         },
+        status: {
+          type: 'boolean',
+          input: false,
+        },
       },
     },
 
@@ -108,7 +112,7 @@ export const createAuth = (): ReturnType<typeof betterAuth> => {
     plugins: [
       customSession(async ({ user, session }) => {
         const staff = await prisma.staff.findFirst({
-          where: { userId: user.id, isActive: true },
+          where: { userId: user.id },
           include: {
             permissions: {
               where: { granted: true },

@@ -1,4 +1,4 @@
-import { LandStatus } from '../../../prisma/generated/enums';
+import { LandPaymentType, LandStatus } from '../../../prisma/generated/enums';
 import { IPaginationDto } from '_root/config/pagination.dto';
 
 export class LandDto {
@@ -9,6 +9,7 @@ export class LandDto {
   district?: string;
   landOwner?: string;
   status: LandStatus;
+  paymentType: LandPaymentType;
   documents: string[];
   agencyId: string;
 }

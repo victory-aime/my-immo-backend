@@ -150,7 +150,7 @@ export class InvitationService {
       const { user } = await auth.api.signUpEmail({
         body: {
           email: invitation.email,
-          password: decryptPassword(invitation.temporaryPassword),
+          password: decryptPassword(invitation.temporaryPassword!),
           name: invitation.name,
         },
       });
@@ -195,7 +195,7 @@ export class InvitationService {
       });
       return {
         email: user.email,
-        password: decryptPassword(invitation.temporaryPassword),
+        password: decryptPassword(invitation.temporaryPassword!),
       };
     });
   }
