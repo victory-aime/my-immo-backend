@@ -54,6 +54,14 @@ export const API_URL = {
     MONTHLY_REVENUE: `${BASE_APIS_URL.SECURED}/property/monthly-revenue`,
     CLOSE_PROPERTY: `${BASE_APIS_URL.SECURED}/property/close`,
   },
+  //  NOUVELLE SECTION AJOUTÉE
+  ANNONCE: {
+    CREATE: `${BASE_APIS_URL.SECURED}/annonces/create`,
+    FIND_ALL: `${BASE_APIS_URL.UNSECURED}/annonces/all`,
+    FIND_BY_AGENCY: `${BASE_APIS_URL.UNSECURED}/annonces/agency`,
+    UPDATE: `${BASE_APIS_URL.SECURED}/annonces/update`,
+    DELETE: `${BASE_APIS_URL.SECURED}/annonces/delete`,
+  },
   USER: {
     INFO: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.USERS}/info`,
     ALL_USERS: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.USERS}/get-allUsers`,

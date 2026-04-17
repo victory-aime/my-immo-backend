@@ -20,6 +20,7 @@ enum CLOUDINARY_FOLDER_NAME {
   DOC = 'documents',
   PROPERTY = 'properties',
   USERS = 'USERS',
+  ANNONCE = 'annonces',
 }
 
 enum SWAGGER_TAGS {

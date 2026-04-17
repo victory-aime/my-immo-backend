@@ -1,15 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { HttpError } from '_root/config/http.error';
 import { AnnonceStatus } from '../../../prisma/generated/enums';
+import { Annonce } from '../../../prisma/generated/client';
 
-//  pour créer une annonce
 export class CreateAnnonceDto {
-  propertyId!: string;
-  description!: string;
-  galleryImages?: string[];
+  propertyId: string;
+  description: string;
+  galleryImages: string[];
 }
 
-//  pour modifier une annonce
 export class UpdateAnnonceDto {
   description?: string;
   galleryImages?: string[];
@@ -18,42 +18,70 @@ export class UpdateAnnonceDto {
 
 @Injectable()
 export class AnnonceService {
-  // On injecte PrismaService pour parler à la base de données
   constructor(private readonly prisma: PrismaService) {}
 
-  //  CRÉER une annonce
-  async createAnnonce(dto: CreateAnnonceDto) {
+  // 1. CRÉER une annonce
+  async createAnnonce(dto: CreateAnnonceDto): Promise<Annonce> {
+    if (!dto.galleryImages || dto.galleryImages.length === 0) {
+      throw new HttpError(
+        'Vous devez fournir au moins une image.',
+        HttpStatus.BAD_REQUEST,
+        'IMAGES_REQUIRED',
+      );
+    }
+
+    const property = await this.prisma.property.findUnique({
+      where: { id: dto.propertyId },
+    });
+
+    if (!property) {
+      throw new HttpError(
+        `Certains informations sont manquantes`,
+        HttpStatus.NOT_FOUND,
+        'PROPERTY_NOT_FOUND',
+      );
+    }
+
     return this.prisma.annonce.create({
       data: {
         propertyId: dto.propertyId,
         description: dto.description,
-        galleryImages: dto.galleryImages ?? [],
+        galleryImages: dto.galleryImages,
         publishedAt: new Date(),
+        status: AnnonceStatus.ACTIVE,
       },
       include: {
-        property: true, // on inclut les infos de la propriété
+        property: true,
       },
     });
   }
 
-  //  LISTE GLOBALE — toutes les annonces
-  async findAllAnnonces() {
+  // 2. LISTE GLOBALE
+  async findAllAnnonces(): Promise<Annonce[]> {
     return this.prisma.annonce.findMany({
       include: {
         property: true,
       },
       orderBy: {
-        createdAt: 'desc', // les plus récentes en premier
+        createdAt: 'desc',
       },
     });
   }
 
-  //  LISTE PAR AGENCE — annonces filtrées par agencyId
-  async findAnnoncesByAgency(agencyId: string) {
+  // 3. LISTE PAR AGENCE
+  async findAnnoncesByAgency(agencyId: string): Promise<Annonce[]> {
+    if (!agencyId) {
+      throw new HttpError(
+        ' Certains informations sont manquantes',
+        HttpStatus.BAD_REQUEST,
+        'MISSING_AGENCY_ID',
+      );
+    }
+
     return this.prisma.annonce.findMany({
       where: {
         property: {
-          agencyId: agencyId, // on filtre par l'ID de l'agence
+          agencyId: agencyId,
         },
       },
       include: {
@@ -65,15 +93,18 @@ export class AnnonceService {
     });
   }
 
-  // MODIFIER une annonce
-  async updateAnnonce(id: string, dto: UpdateAnnonceDto) {
-    // On vérifie que l'annonce existe
+  // 4. MODIFIER une annonce
+  async updateAnnonce(id: string, dto: UpdateAnnonceDto): Promise<Annonce> {
     const annonce = await this.prisma.annonce.findUnique({
       where: { id },
     });
 
     if (!annonce) {
-      throw new NotFoundException(`Annonce ${id} introuvable`);
+      throw new HttpError(
+        `Annonce introuvable )`,
+        HttpStatus.NOT_FOUND,
+        'ANNONCE_NOT_FOUND',
+      );
     }
 
     return this.prisma.annonce.update({
@@ -89,21 +120,29 @@ export class AnnonceService {
     });
   }
 
-  // SUPPRIMER une annonce
-  async deleteAnnonce(id: string) {
-    // On vérifie que l'annonce existe
+  // 5. SUPPRIMER une annonce - Renvoie un objet de succès
+  async deleteAnnonce(
+    id: string,
+  ): Promise<{ success: boolean; message: string }> {
     const annonce = await this.prisma.annonce.findUnique({
       where: { id },
     });
 
     if (!annonce) {
-      throw new NotFoundException(`Annonce ${id} introuvable`);
+      throw new HttpError(
+        `Impossible de supprimer.`,
+        HttpStatus.NOT_FOUND,
+        'ANNONCE_NOT_FOUND',
+      );
     }
 
     await this.prisma.annonce.delete({
       where: { id },
     });
 
-    return { message: 'Annonce supprimée avec succès' };
+    return {
+      success: true,
+      message: `Annonce est supprimée avec succès`,
+    };
   }
 }
