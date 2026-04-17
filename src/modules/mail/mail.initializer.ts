@@ -22,6 +22,17 @@ export class AuthMailInitializer implements OnModuleInit {
         });
       },
     );
+    authEmailBridge.updateUserEmailHandler(
+      async ({ name, email, newEmail, url }) => {
+        console.log('update email link', url);
+        await this.emailService.updateUserEmailLink({
+          sendTo: email,
+          username: name,
+          newEmail,
+          link: url,
+        });
+      },
+    );
 
     authEmailBridge.registerResetPasswordHandler(
       async ({ name, email, url }) => {

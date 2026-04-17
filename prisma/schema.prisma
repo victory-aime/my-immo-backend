@@ -27,6 +27,8 @@ model User {
   emailVerified    Boolean    @default(false)
   twoFactorEnabled Boolean?
   status           UserStatus @default(ACTIVE)
+  theme_color      String?
+  theme_mode       String?
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 

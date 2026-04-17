@@ -148,4 +148,26 @@ export class ResendService {
       },
     });
   }
+
+  async sendUpdateEmailVerification(
+    to: string,
+    username: string,
+    link: string,
+    newEmail?: string,
+  ): Promise<EmailResult> {
+    return this.sendTemplateEmail({
+      to,
+      subject: 'Changement d’adresse email',
+      template: EMAIL_TEMPLATE_ID.UPDATE_EMAIL_VERIFY,
+      variables: {
+        FROM_CLIENT_EMAIL: this.fromAddress,
+        SUBJECT: 'Changement d’adresse email',
+        EXPIRE_TIME: formatExpiresIn(EXPIRE_TIME._15_MINUTES),
+        VERIFY_EMAIL_LINK: link,
+        USERNAME: username,
+        NEW_EMAIL: newEmail,
+        APP_NAME: process.env.APP_NAME,
+      },
+    });
+  }
 }

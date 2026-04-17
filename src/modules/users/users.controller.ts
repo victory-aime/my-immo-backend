@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -29,6 +30,7 @@ import {
 import { AuthorizeRoles, MiddlewareGuard } from '_root/guard/middleware.guard';
 import { Role } from '../../../prisma/generated/enums';
 import { convertToInteger } from '_root/config/convert';
+import { User } from '../../../prisma/generated/client';
 
 @ApiBearerAuth()
 @ApiTags(SWAGGER_TAGS.USER_MANAGEMENT)
@@ -36,6 +38,13 @@ import { convertToInteger } from '_root/config/convert';
 @Controller()
 export class UsersController {
   constructor(private readonly userService: UsersService) {}
+
+  @Get('v1/secure/users/theme')
+  async userTheme() {
+    return {
+      primaryColor: '#fo2b4e',
+    };
+  }
 
   @Get(API_URL.USER.INFO)
   @ApiOperation({ summary: 'Récupérer les informations d’un utilisateur' })
@@ -92,5 +101,10 @@ export class UsersController {
   })
   async checkUserEmail(@Body() data: { email: string }) {
     return this.userService.checkUserEmail(data?.email);
+  }
+
+  @Patch(API_URL.USER.UPDATE)
+  async updateUserInfo(@Body() data: User) {
+    return this.userService.updateUser(data);
   }
 }

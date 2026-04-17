@@ -9,12 +9,14 @@ type EmailHandler = (payload: {
   name: string;
   email: string;
   url: string;
+  newEmail?: string;
   expireTime: string;
 }) => Promise<void>;
 
 class AuthEmailBridge {
   private verificationHandler: EmailHandler | null = null;
   private resetPasswordHandler: EmailHandler | null = null;
+  private changeEmailHandler: EmailHandler | null = null;
 
   registerVerificationHandler(handler: EmailHandler) {
     this.verificationHandler = handler;
@@ -22,6 +24,9 @@ class AuthEmailBridge {
 
   registerResetPasswordHandler(handler: EmailHandler) {
     this.resetPasswordHandler = handler;
+  }
+  updateUserEmailHandler(handler: EmailHandler) {
+    this.changeEmailHandler = handler;
   }
 
   async sendVerification(payload: Parameters<EmailHandler>[0]) {
@@ -36,6 +41,12 @@ class AuthEmailBridge {
       throw new Error('AuthEmailBridge: resetPasswordHandler non enregistré');
     }
     return this.resetPasswordHandler(payload);
+  }
+  async changeUserEmail(payload: Parameters<EmailHandler>[0]) {
+    if (!this.changeEmailHandler) {
+      throw new Error('AuthEmailBridge: changeEmailHandler non enregistré');
+    }
+    return this.changeEmailHandler(payload);
   }
 }
 

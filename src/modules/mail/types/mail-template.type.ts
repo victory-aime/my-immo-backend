@@ -32,6 +32,15 @@ export type TemplateVariables = {
     USER_PASSWORD: string;
     AGENCY_NAME: string;
   };
+  [EMAIL_TEMPLATE_ID.UPDATE_EMAIL_VERIFY]: {
+    FROM_CLIENT_EMAIL?: string;
+    SUBJECT?: string;
+    EXPIRE_TIME: string;
+    VERIFY_EMAIL_LINK?: string;
+    USERNAME?: string;
+    NEW_EMAIL?: string;
+    APP_NAME?: string;
+  };
 };
 
 export class SendTemplateEmailOptions<T extends EMAIL_TEMPLATE_ID> {
@@ -56,6 +65,7 @@ export class EmailTemplatePayload {
   sendTo: string;
   username: string;
   link: string;
+  newEmail?: string;
 }
 
 export class SendInviteEmailPayload {

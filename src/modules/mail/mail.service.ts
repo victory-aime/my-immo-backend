@@ -27,4 +27,18 @@ export class EmailService {
       throw new Error(`Error sending email: ${error}`);
     }
   }
+
+  async updateUserEmailLink(data: EmailTemplatePayload): Promise<void> {
+    const { sendTo, link, username, newEmail } = data;
+    try {
+      await this.resendService.sendUpdateEmailVerification(
+        sendTo,
+        username,
+        link,
+        newEmail,
+      );
+    } catch (error) {
+      throw new Error(`Error sending email: ${error}`);
+    }
+  }
 }

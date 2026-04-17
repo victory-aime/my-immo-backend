@@ -1,11 +1,8 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { User } from '../../../prisma/generated/client';
+import { HttpError } from '_root/config/http.error';
+import { getAuthInstance } from '_root/lib/auth';
 
 @Injectable()
 export class UsersService {
@@ -65,6 +62,8 @@ export class UsersService {
       email: user.email,
       name: user.name,
       role: user.role,
+      theme_color: user?.theme_color,
+      theme_mode: user?.theme_mode,
       emailVerified: user.emailVerified,
       twoFactorEnabled: user.twoFactorEnabled,
       status: user.status,
@@ -149,5 +148,37 @@ export class UsersService {
   async checkUserEmail(email: string): Promise<boolean> {
     const user = await this.findUser({ email });
     return !!user;
+  }
+
+  async updateUser(data: User): Promise<{ message: string }> {
+    const authInstance = getAuthInstance();
+
+    if (!data?.id) {
+      throw new HttpError(
+        'Identifiant utilisateur manquant',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const existingUser = await this.findUser({ id: data.id });
+
+    if (!existingUser) {
+      throw new HttpError('Utilisateur introuvable', HttpStatus.NOT_FOUND);
+    }
+
+    await this.prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        ...data,
+        email: existingUser.email,
+      },
+    });
+
+    return {
+      message:
+        data.email && data.email !== existingUser.email
+          ? 'Modification enregistrée. Veuillez confirmer votre nouvelle adresse e-mail.'
+          : 'Utilisateur mis à jour',
+    };
   }
 }

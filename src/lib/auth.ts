@@ -56,6 +56,22 @@ export const createAuth = (): ReturnType<typeof betterAuth> => {
       deleteUser: {
         enabled: true,
       },
+      changeEmail: {
+        enabled: true,
+        // sendChangeEmailConfirmation: async ({ user, token, newEmail }) => {
+        //   console.log(
+        //     'update email link',
+        //     `${process.env.FRONTEND_EMAIL_VERIFIED_URL}/?token=${token}`,
+        //   );
+        //   await authEmailBridge.changeUserEmail({
+        //     name: user.name,
+        //     email: user.email,
+        //     newEmail,
+        //     url: `${process.env.FRONTEND_UPDATE_VERIFIED_URL}/?token=${token}`,
+        //     expireTime: formatExpiresIn(EXPIRE_TIME._15_MINUTES),
+        //   });
+        // },
+      },
       additionalFields: {
         role: {
           type: 'string',
