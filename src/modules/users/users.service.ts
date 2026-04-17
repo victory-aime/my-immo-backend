@@ -2,7 +2,6 @@ import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { User } from '../../../prisma/generated/client';
 import { HttpError } from '_root/config/http.error';
-import { getAuthInstance } from '_root/lib/auth';
 
 @Injectable()
 export class UsersService {
@@ -76,12 +75,6 @@ export class UsersService {
     };
   }
 
-  // async userPermissions(staffId: string) {
-  //   await this.prisma.staffPermission.findUnique({
-  //     where: { staffId: staffId },
-  //   });
-  // }
-
   async userInfo(id: string) {
     try {
       const user = await this.findUser({ id });
@@ -151,19 +144,14 @@ export class UsersService {
   }
 
   async updateUser(data: User): Promise<{ message: string }> {
-    const authInstance = getAuthInstance();
-
     if (!data?.id) {
-      throw new HttpError(
-        'Identifiant utilisateur manquant',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpError('Informations utilisateur manquantes', HttpStatus.BAD_REQUEST);
     }
 
     const existingUser = await this.findUser({ id: data.id });
 
     if (!existingUser) {
-      throw new HttpError('Utilisateur introuvable', HttpStatus.NOT_FOUND);
+      throw new HttpError('Informations utilisateur manquantes', HttpStatus.BAD_REQUEST);
     }
 
     await this.prisma.user.update({
