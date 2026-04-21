@@ -15,6 +15,7 @@ enum APIS_URL_GLOBAL_PATH {
   PERMS = 'perms',
   INVITE = 'invitation',
   TEAM = 'team',
+  ANNONCES = 'annonces',
   LEADS = 'leads',
 }
 

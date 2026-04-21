@@ -22,7 +22,7 @@ export class UploadsService {
       .replace(/[^a-zA-Z0-9-_]/g, '')
       .toLowerCase();
 
-    return `${sanitized}-${randomUUID()}.${ext}`;
+    return `${sanitized}-${randomUUID()}`;
   }
 
   private getResourceType(mimetype: string): 'image' | 'raw' {

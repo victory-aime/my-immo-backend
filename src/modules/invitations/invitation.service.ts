@@ -19,6 +19,9 @@ export class InvitationService {
       where: {
         agencyId,
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
   }
 

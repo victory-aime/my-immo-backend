@@ -335,8 +335,8 @@ model Property {
 }
 
 model Annonce {
-  id String @id @default(uuid())
-
+  id         String   @id @default(uuid())
+  title      String?
   propertyId String
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 

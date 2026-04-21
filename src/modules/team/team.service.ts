@@ -25,7 +25,6 @@ export class TeamService {
             id: true,
             name: true,
             email: true,
-            role: true,
           },
         },
         permissions: {
@@ -38,6 +37,9 @@ export class TeamService {
           },
         },
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
     return teamMembers.map((member) => ({
@@ -45,7 +47,7 @@ export class TeamService {
       userId: member.userId,
       name: member.user.name,
       email: member.user.email,
-      role: member.user.role,
+      role: member.agencyRole,
       status: member.isActive,
       createdAt: member.createdAt,
       permissions: member.permissions,

@@ -9,7 +9,7 @@ import {
   UseInterceptors,
   UploadedFiles,
 } from '@nestjs/common';
-import { AnnonceService, CreateAnnonceDto, UpdateAnnonceDto } from './annonce.service';
+import { AnnonceService } from './annonce.service';
 import { API_URL } from '_root/config/api';
 import {
   ApiBadRequestResponse,
@@ -24,17 +24,20 @@ import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UploadsService } from '_root/modules/cloudinary/uploads.service';
 import { CLOUDINARY_FOLDER_NAME } from '_root/config/enum';
+import { CreateAnnonceDto, UpdateAnnonceDto } from '_root/modules/annonce/annonce.dto';
+import { AgencyService } from '_root/modules/agency/agency.service';
 
 @ApiTags('Annonces')
 @Controller()
 export class AnnonceController {
   constructor(
     private readonly annonceService: AnnonceService,
-    private readonly uploadFileService: UploadsService, // ✅ Injection du service d'upload
+    private readonly agencyService: AgencyService,
+    private readonly uploadFileService: UploadsService,
   ) {}
 
   // 1. CRÉER UNE ANNONCE (Avec Upload d'images)
-  @AllowAnonymous()
+
   @ApiBearerAuth()
   @Post(API_URL.ANNONCE.CREATE)
   @ApiConsumes('multipart/form-data') //  Précise à Swagger qu'on envoie des fichiers
@@ -42,50 +45,35 @@ export class AnnonceController {
     summary: 'Publier une nouvelle annonce immobilière avec images',
   })
   @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        agencyName: {
-          type: 'string',
-          description: "Nom de l'agence pour le dossier Cloudinary",
-        },
-        propertyId: { type: 'string' },
-        description: { type: 'string' },
-        images: {
-          type: 'array',
-          items: { type: 'string', format: 'binary' },
-        },
-      },
-    },
+    type: CreateAnnonceDto,
   })
   @ApiOkResponse({ description: 'Annonce créée avec succès' })
   @ApiBadRequestResponse({ description: 'Données ou fichiers invalides' })
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'images', maxCount: 10 }])) //  Intercepte les fichiers nommés "images"
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'galleryImages', maxCount: 5 }]))
   async create(
-    @Body() dto: CreateAnnonceDto,
-    @Body('agencyName') agencyName: string, //  Récupère le nom de l'agence pour le chemin Cloudinary
-    @UploadedFiles() files: { images?: Express.Multer.File[] },
+    @Body('data') rawData: string,
+    @UploadedFiles() files: { galleryImages?: Express.Multer.File[] },
   ) {
+    const data: CreateAnnonceDto = JSON.parse(rawData);
+
     let cloudinaryImagesUrls: string[] = [];
 
-    if (files?.images?.length) {
-      //  Upload de chaque image vers le dossier spécifique de l'agence
+    if (files?.galleryImages?.length) {
+      const agency = await this.agencyService.findAgency(data?.agencyId!);
       const uploads = await Promise.all(
-        files.images.map((file) =>
+        files.galleryImages.map((file) =>
           this.uploadFileService.uploadFiles(
             file,
-            agencyName || 'agence-anonyme',
-            CLOUDINARY_FOLDER_NAME.ANNONCE, // Utilise l'énum que tu as créé
+            agency?.name || 'agence-anonyme',
+            CLOUDINARY_FOLDER_NAME.ANNONCE,
           ),
         ),
       );
-
       cloudinaryImagesUrls = uploads.map((res) => res.secure_url);
     }
 
-    //  Enregistre l'annonce avec les URLs Cloudinary dans galleryImages
     return this.annonceService.createAnnonce({
-      ...dto,
+      ...data,
       galleryImages: cloudinaryImagesUrls,
     });
   }
@@ -110,8 +98,33 @@ export class AnnonceController {
   @ApiBearerAuth()
   @Put(API_URL.ANNONCE.UPDATE)
   @ApiOperation({ summary: 'Mettre à jour une annonce' })
-  async update(@Query('id') id: string, @Body() dto: UpdateAnnonceDto) {
-    return this.annonceService.updateAnnonce(id, dto);
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'galleryImages', maxCount: 5 }]))
+  async updateAnnonce(
+    @Body('data') rawData: string,
+    @UploadedFiles() files: { galleryImages?: Express.Multer.File[] },
+  ) {
+    const data: UpdateAnnonceDto = JSON.parse(rawData);
+
+    let cloudinaryImagesUrls: string[] = [];
+
+    if (files?.galleryImages?.length) {
+      const agency = await this.agencyService.findAgency(data?.agencyId!);
+      const uploads = await Promise.all(
+        files.galleryImages.map((file) =>
+          this.uploadFileService.uploadFiles(
+            file,
+            agency?.name || 'agence-anonyme',
+            CLOUDINARY_FOLDER_NAME.ANNONCE,
+          ),
+        ),
+      );
+      cloudinaryImagesUrls = uploads.map((res) => res.secure_url);
+    }
+
+    return this.annonceService.updateAnnonce({
+      ...data,
+      galleryImages: cloudinaryImagesUrls,
+    });
   }
 
   // 5. SUPPRIMER
