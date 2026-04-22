@@ -3,11 +3,7 @@ import { PrismaService } from '_root/database/prisma.service';
 import { AgencyService } from '_root/modules/agency/agency.service';
 import { HttpError } from '_root/config/http.error';
 import { convertToInteger } from '_root/config/convert';
-import {
-  CreateLandDto,
-  LandFilterDto,
-  UpdateLandDto,
-} from '_root/modules/land/land.dto';
+import { CreateLandDto, LandFilterDto, UpdateLandDto } from '_root/modules/land/land.dto';
 import { Prisma } from '../../../prisma/generated/client';
 
 @Injectable()
@@ -101,11 +97,7 @@ export class LandService {
     });
 
     if (!land) {
-      throw new HttpError(
-        'Terrain introuvable',
-        HttpStatus.NOT_FOUND,
-        'LAND_NOT_FOUND',
-      );
+      throw new HttpError('Terrain introuvable', HttpStatus.NOT_FOUND, 'LAND_NOT_FOUND');
     }
 
     if (data.title && data.title !== land.title) {

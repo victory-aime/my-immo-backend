@@ -89,10 +89,7 @@ export const createAuth = (): ReturnType<typeof betterAuth> => {
       autoSignInAfterVerification: true,
       expiresIn: EXPIRE_TIME._30_MINUTES,
       sendVerificationEmail: async ({ user, token }) => {
-        console.log(
-          'link',
-          `${process.env.FRONTEND_EMAIL_VERIFIED_URL}/?token=${token}`,
-        );
+        console.log('link', `${process.env.FRONTEND_EMAIL_VERIFIED_URL}/?token=${token}`);
         await authEmailBridge.sendVerification({
           name: user.name,
           email: user.email,

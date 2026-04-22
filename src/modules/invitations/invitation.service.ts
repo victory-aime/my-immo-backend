@@ -37,9 +37,7 @@ export class InvitationService {
       },
       select: { featureId: true },
     });
-    const allowedFeatureIds = new Set(
-      agencyPlanFeatures.map((f) => f.featureId),
-    );
+    const allowedFeatureIds = new Set(agencyPlanFeatures.map((f) => f.featureId));
 
     // 2. Récupérer les permissions demandées avec leur featureId parent
     const requestedPermissions = await this.prisma.permission.findMany({
@@ -50,13 +48,9 @@ export class InvitationService {
     });
 
     // 3. Valider que chaque permission appartient à une feature du plan
-    const invalidPerms = requestedPermissions.filter(
-      (p) => !allowedFeatureIds.has(p.featureId),
-    );
+    const invalidPerms = requestedPermissions.filter((p) => !allowedFeatureIds.has(p.featureId));
     if (invalidPerms.length > 0) {
-      throw new BadRequestException(
-        'Certaines permissions ne sont pas incluses dans votre plan.',
-      );
+      throw new BadRequestException('Certaines permissions ne sont pas incluses dans votre plan.');
     }
 
     // 4. Générer le mot de passe côté serveur (jamais côté client)
@@ -140,9 +134,7 @@ export class InvitationService {
       },
       select: { featureId: true },
     });
-    const currentAllowedFeatureIds = new Set(
-      currentPlanFeatures.map((f) => f.featureId),
-    );
+    const currentAllowedFeatureIds = new Set(currentPlanFeatures.map((f) => f.featureId));
 
     return this.prisma.$transaction(async (tx) => {
       // 3. Créer le User via better-auth

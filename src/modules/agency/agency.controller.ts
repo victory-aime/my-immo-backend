@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Query,
-  UploadedFiles,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { API_URL } from '_root/config/api';
 import {
   ApiBadRequestResponse,
@@ -72,11 +64,7 @@ export class AgencyController {
     if (files?.documents?.length) {
       const uploads = await Promise.all(
         files.documents.map((document) =>
-          this.uploadFileService.uploadFiles(
-            document,
-            data.name,
-            CLOUDINARY_FOLDER_NAME.DOC,
-          ),
+          this.uploadFileService.uploadFiles(document, data.name, CLOUDINARY_FOLDER_NAME.DOC),
         ),
       );
 
@@ -132,10 +120,7 @@ export class AgencyController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async closeAgency(
-    @Query('agencyId') agencyId: string,
-    @Query('ownerId') ownerId: string,
-  ) {
+  async closeAgency(@Query('agencyId') agencyId: string, @Query('ownerId') ownerId: string) {
     return this.agencyService.closeAgency({ agencyId, ownerId });
   }
 

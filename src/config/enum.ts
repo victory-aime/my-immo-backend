@@ -15,6 +15,7 @@ enum APIS_URL_GLOBAL_PATH {
   PERMS = 'perms',
   INVITE = 'invitation',
   TEAM = 'team',
+  LEADS = 'leads',
 }
 
 enum CLOUDINARY_FOLDER_NAME {

@@ -1,9 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
-import {
-  propertyDto,
-  PropertyFilterDto,
-} from '_root/modules/property/property.dto';
+import { propertyDto, PropertyFilterDto } from '_root/modules/property/property.dto';
 import { HttpError } from '_root/config/http.error';
 import { AgencyService } from '_root/modules/agency/agency.service';
 import { convertToInteger } from '_root/config/convert';
@@ -83,10 +80,7 @@ export class PropertyService {
     });
   }
 
-  async createProperty(
-    ownerId: string,
-    data: propertyDto,
-  ): Promise<{ message: string }> {
+  async createProperty(ownerId: string, data: propertyDto): Promise<{ message: string }> {
     await this.agencyService.checkAgencyOwnership(data.agencyId);
 
     const uniqueName = await this.prisma.property.findUnique({
@@ -112,11 +106,7 @@ export class PropertyService {
       });
 
       if (!batiment) {
-        throw new HttpError(
-          'Bâtiment introuvable',
-          HttpStatus.NOT_FOUND,
-          'BATIMENT_NOT_FOUND',
-        );
+        throw new HttpError('Bâtiment introuvable', HttpStatus.NOT_FOUND, 'BATIMENT_NOT_FOUND');
       }
 
       if (batiment.agencyId !== data.agencyId) {
@@ -132,12 +122,7 @@ export class PropertyService {
       data.city = null;
       data.district = null;
     } else {
-      if (
-        !data.address ||
-        !data.city ||
-        !data?.district ||
-        !data?.propertyOwner
-      ) {
+      if (!data.address || !data.city || !data?.district || !data?.propertyOwner) {
         throw new HttpError(
           'Adresse, ville, quartier et propriétaire requis si aucun bâtiment',
           HttpStatus.BAD_REQUEST,
@@ -165,11 +150,7 @@ export class PropertyService {
     });
 
     if (!property) {
-      throw new HttpError(
-        'Propriété introuvable',
-        HttpStatus.NOT_FOUND,
-        'PROPERTY_NOT_FOUND',
-      );
+      throw new HttpError('Propriété introuvable', HttpStatus.NOT_FOUND, 'PROPERTY_NOT_FOUND');
     }
 
     await this.agencyService.checkAgencyOwnership(property.agencyId);
@@ -181,11 +162,7 @@ export class PropertyService {
       });
 
       if (!batiment) {
-        throw new HttpError(
-          'Bâtiment introuvable',
-          HttpStatus.NOT_FOUND,
-          'BATIMENT_NOT_FOUND',
-        );
+        throw new HttpError('Bâtiment introuvable', HttpStatus.NOT_FOUND, 'BATIMENT_NOT_FOUND');
       }
 
       if (batiment.agencyId !== property.agencyId) {
@@ -296,10 +273,7 @@ export class PropertyService {
       type,
       total: value.total,
       occupied: value.occupied,
-      occupationRate:
-        value.total === 0
-          ? 0
-          : Math.round((value.occupied / value.total) * 100),
+      occupationRate: value.total === 0 ? 0 : Math.round((value.occupied / value.total) * 100),
     }));
   }
 

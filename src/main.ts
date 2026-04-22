@@ -43,10 +43,7 @@ async function bootstrap() {
       'Access-Control-Allow-Headers',
       'Origin, X-Requested-With, Content-Type, Accept, Authorization',
     );
-    res.header(
-      'Access-Control-Allow-Methods',
-      'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    );
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
 
     if (req.method === 'OPTIONS') {
       return res.sendStatus(204);
@@ -56,10 +53,7 @@ async function bootstrap() {
   });
 
   // Mount BetterAuth before body parsers
-  expressApp.all(
-    /^\/api\/auth\/.*/,
-    toNodeHandler(authService.instance.handler),
-  );
+  expressApp.all(/^\/api\/auth\/.*/, toNodeHandler(authService.instance.handler));
 
   // Re-enable Nest's JSON body parser AFTER mounting BetterAuth
   expressApp.use(require('express').json());

@@ -33,3 +33,13 @@ export class ResetPasswordDto {
   @MinLength(12)
   newPassword: string;
 }
+
+// ✅ LoginDto en dehors de ResetPasswordDto
+export class LoginDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(8)
+  password: string;
+}

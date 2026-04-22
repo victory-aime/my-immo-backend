@@ -32,11 +32,7 @@ export class UploadsService {
     return 'raw';
   }
 
-  async uploadFiles(
-    file: Express.Multer.File,
-    agencyName: string,
-    folderName: string,
-  ) {
+  async uploadFiles(file: Express.Multer.File, agencyName: string, folderName: string) {
     if (!file?.originalname) {
       throw new BadRequestException('Fichier invalide');
     }
@@ -47,12 +43,7 @@ export class UploadsService {
 
     const resourceType = this.getResourceType(file.mimetype);
 
-    return this.cloudinary.uploadFile(
-      file.buffer,
-      filename,
-      folderPath,
-      resourceType,
-    );
+    return this.cloudinary.uploadFile(file.buffer, filename, folderPath, resourceType);
   }
 
   async uploadUserImage(file: Express.Multer.File, userId: string) {
@@ -63,12 +54,7 @@ export class UploadsService {
     const folderPath = `${CLOUDINARY_FOLDER_NAME.USERS}/${userId}`;
     const filename = this.generateUniqueFilename(file.originalname);
 
-    return this.cloudinary.uploadFile(
-      file.buffer,
-      filename,
-      folderPath,
-      'image',
-    );
+    return this.cloudinary.uploadFile(file.buffer, filename, folderPath, 'image');
   }
 
   async deleteUserImage(userId: string): Promise<void> {

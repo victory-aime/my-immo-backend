@@ -11,10 +11,7 @@ import { propertyDto, PropertyFilterDto } from './property.dto';
 import { PropertyService } from './property.service';
 import { AllowAnonymous, AuthGuard } from '@thallesp/nestjs-better-auth';
 import { Throttle } from '@nestjs/throttler';
-import {
-  PermissionGuard,
-  RequirePermission,
-} from '_root/guard/permission.guard';
+import { PermissionGuard, RequirePermission } from '_root/guard/permission.guard';
 
 @Controller()
 @ApiBearerAuth()
@@ -62,10 +59,7 @@ export class PropertyController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async createProperty(
-    @Body() data: propertyDto,
-    @Query('ownerId') ownerId: string,
-  ) {
+  async createProperty(@Body() data: propertyDto, @Query('ownerId') ownerId: string) {
     return this.propertyService.createProperty(ownerId, {
       ...data,
     });
@@ -102,10 +96,7 @@ export class PropertyController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async getOccupationRate(
-    @Query('ownerId') ownerId: string,
-    @Query('agencyId') agencyId: string,
-  ) {
+  async getOccupationRate(@Query('ownerId') ownerId: string, @Query('agencyId') agencyId: string) {
     return this.propertyService.getOccupationRateByType(ownerId, agencyId);
   }
 }

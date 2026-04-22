@@ -115,8 +115,7 @@ async function seed() {
 
   const allFeatures = await prisma.feature.findMany();
 
-  const getFeatureId = (name: string) =>
-    allFeatures.find((f) => f.name === name)?.id!;
+  const getFeatureId = (name: string) => allFeatures.find((f) => f.name === name)?.id!;
 
   await prisma.$transaction(async (tx) => {
     // BASIC

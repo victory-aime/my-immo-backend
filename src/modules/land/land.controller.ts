@@ -10,11 +10,7 @@ import {
 } from '@nestjs/common';
 import { LandService } from '_root/modules/land/land.service';
 import { IPaginationDto } from '_root/config/pagination.dto';
-import {
-  CreateLandDto,
-  LandFilterDto,
-  UpdateLandDto,
-} from '_root/modules/land/land.dto';
+import { CreateLandDto, LandFilterDto, UpdateLandDto } from '_root/modules/land/land.dto';
 import { AgencyService } from '_root/modules/agency/agency.service';
 import { UploadsService } from '_root/modules/cloudinary/uploads.service';
 import { CLOUDINARY_FOLDER_NAME } from '_root/config/enum';

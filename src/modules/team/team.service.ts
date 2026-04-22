@@ -58,10 +58,7 @@ export class TeamService {
     status: boolean,
   ): Promise<{ message: string }> {
     if (!id || !userId) {
-      throw new HttpError(
-        'Certaines informations sont manquantes',
-        HttpStatus.NOT_FOUND,
-      );
+      throw new HttpError('Certaines informations sont manquantes', HttpStatus.NOT_FOUND);
     }
 
     await this.prisma.user.update({

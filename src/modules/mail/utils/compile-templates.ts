@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as Handlebars from 'handlebars';
@@ -40,10 +36,7 @@ export class CompileTemplateService {
   /**
    * Compile un fichier Handlebars (.hbs)
    */
-  private compileHbs<T extends Record<string, any>>(
-    templateName: string,
-    context?: T,
-  ): string {
+  private compileHbs<T extends Record<string, any>>(templateName: string, context?: T): string {
     const fullPath = path.join(this.basePath, `${templateName}.hbs`);
 
     if (!fs.existsSync(fullPath)) {

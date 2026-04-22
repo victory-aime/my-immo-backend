@@ -1,10 +1,5 @@
 // guards/permission.guard.ts
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  ForbiddenException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { SetMetadata } from '@nestjs/common';
 import { BaseUserSession } from '@thallesp/nestjs-better-auth';
@@ -14,10 +9,10 @@ export class PermissionGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredPermission = this.reflector.getAllAndOverride<string>(
-      PERMISSION_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredPermission = this.reflector.getAllAndOverride<string>(PERMISSION_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     // Pas de permission requise → route publique
     if (!requiredPermission) return true;
@@ -28,8 +23,7 @@ export class PermissionGuard implements CanActivate {
       session?: { token: string; permissions: any };
     };
 
-    if (!session?.session?.token)
-      throw new ForbiddenException('Non authentifié.');
+    if (!session?.session?.token) throw new ForbiddenException('Non authentifié.');
 
     // ADMIN → accès total sans vérifier les permissions
     if (session.user?.role === 'AGENCY_ADMIN' || 'OWNER') return true;
@@ -39,9 +33,7 @@ export class PermissionGuard implements CanActivate {
     );
 
     if (!hasPermission) {
-      throw new ForbiddenException(
-        `Permission manquante : ${requiredPermission}`,
-      );
+      throw new ForbiddenException(`Permission manquante : ${requiredPermission}`);
     }
 
     return true;
@@ -50,5 +42,4 @@ export class PermissionGuard implements CanActivate {
 
 const PERMISSION_KEY = 'required_permission';
 
-export const RequirePermission = (permission: string) =>
-  SetMetadata(PERMISSION_KEY, permission);
+export const RequirePermission = (permission: string) => SetMetadata(PERMISSION_KEY, permission);

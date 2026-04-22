@@ -47,10 +47,7 @@ export class CloudinaryService {
       await cloudinary.api.delete_resources_by_prefix(folderPath);
       await cloudinary.api.delete_folder(folderPath);
     } catch (err) {
-      console.error(
-        'Erreur lors de la suppression de l’image Cloudinary :',
-        err,
-      );
+      console.error('Erreur lors de la suppression de l’image Cloudinary :', err);
       throw err;
     }
   }

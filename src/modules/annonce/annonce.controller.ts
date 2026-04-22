@@ -9,11 +9,7 @@ import {
   UseInterceptors,
   UploadedFiles,
 } from '@nestjs/common';
-import {
-  AnnonceService,
-  CreateAnnonceDto,
-  UpdateAnnonceDto,
-} from './annonce.service';
+import { AnnonceService, CreateAnnonceDto, UpdateAnnonceDto } from './annonce.service';
 import { API_URL } from '_root/config/api';
 import {
   ApiBadRequestResponse,

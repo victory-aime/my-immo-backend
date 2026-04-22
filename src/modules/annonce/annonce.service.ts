@@ -100,11 +100,7 @@ export class AnnonceService {
     });
 
     if (!annonce) {
-      throw new HttpError(
-        `Annonce introuvable )`,
-        HttpStatus.NOT_FOUND,
-        'ANNONCE_NOT_FOUND',
-      );
+      throw new HttpError(`Annonce introuvable )`, HttpStatus.NOT_FOUND, 'ANNONCE_NOT_FOUND');
     }
 
     return this.prisma.annonce.update({
@@ -121,19 +117,13 @@ export class AnnonceService {
   }
 
   // 5. SUPPRIMER une annonce - Renvoie un objet de succès
-  async deleteAnnonce(
-    id: string,
-  ): Promise<{ success: boolean; message: string }> {
+  async deleteAnnonce(id: string): Promise<{ success: boolean; message: string }> {
     const annonce = await this.prisma.annonce.findUnique({
       where: { id },
     });
 
     if (!annonce) {
-      throw new HttpError(
-        `Impossible de supprimer.`,
-        HttpStatus.NOT_FOUND,
-        'ANNONCE_NOT_FOUND',
-      );
+      throw new HttpError(`Impossible de supprimer.`, HttpStatus.NOT_FOUND, 'ANNONCE_NOT_FOUND');
     }
 
     await this.prisma.annonce.delete({

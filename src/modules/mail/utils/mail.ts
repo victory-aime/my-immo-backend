@@ -16,5 +16,4 @@ export const EMAIL_TEMPLATE_RUNTIME_ID: Record<EMAIL_TEMPLATE_ID, string> = {
   UPDATE_EMAIL_VERIFY: process.env.RESEND_TEMPLATE_UPDATE_EMAIL_ID!,
 };
 
-export type EMAIL_TEMPLATE_ID =
-  (typeof EMAIL_TEMPLATE_ID)[keyof typeof EMAIL_TEMPLATE_ID];
+export type EMAIL_TEMPLATE_ID = (typeof EMAIL_TEMPLATE_ID)[keyof typeof EMAIL_TEMPLATE_ID];

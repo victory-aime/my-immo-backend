@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { TokenExpiredError } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import { AppUnauthorizedExceptionService } from '../config/services';
@@ -49,12 +44,9 @@ export class GoogleAuthGuard implements CanActivate {
           code: TOKEN_EXCEPTION.TOKEN_EXPIRED,
         });
       }
-      throw new AppUnauthorizedExceptionService(
-        'Token invalide ou signature incorrecte',
-        {
-          code: TOKEN_EXCEPTION.TOKEN_INVALID,
-        },
-      );
+      throw new AppUnauthorizedExceptionService('Token invalide ou signature incorrecte', {
+        code: TOKEN_EXCEPTION.TOKEN_INVALID,
+      });
     }
   }
 }

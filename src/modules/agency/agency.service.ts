@@ -7,12 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { createAgencyOwnerDto, updateAgencyDto } from './agency.dto';
-import {
-  AgencyStatus,
-  Plan,
-  Role,
-  SubscriptionStatus,
-} from '../../../prisma/generated/enums';
+import { AgencyStatus, Plan, Role, SubscriptionStatus } from '../../../prisma/generated/enums';
 import { UsersService } from '_root/modules/users/users.service';
 import { HttpError } from '_root/config/http.error';
 import { getAuthInstance } from '_root/lib/auth';
@@ -121,9 +116,7 @@ export class AgencyService {
       });
 
       if (existingUser) {
-        throw new BadRequestException(
-          'Impossible de créer un compte avec cet email',
-        );
+        throw new BadRequestException('Impossible de créer un compte avec cet email');
       }
 
       // 2. Créer l'utilisateur via Better-Auth
@@ -176,8 +169,7 @@ export class AgencyService {
       });
 
       return {
-        message:
-          'Votre agence a été créée avec succès et est en attente de validation.',
+        message: 'Votre agence a été créée avec succès et est en attente de validation.',
       };
     } catch (error) {
       if (
@@ -185,9 +177,7 @@ export class AgencyService {
         error instanceof NotFoundException ||
         error instanceof HttpError
       ) {
-        throw new HttpError(
-          'Une erreur est survenu veuillez ressayer plus tard',
-        );
+        throw new HttpError('Une erreur est survenu veuillez ressayer plus tard');
       }
       console.error('Erreur onboarding agence:', error);
       await this.prismaService.user.delete({
@@ -222,9 +212,7 @@ export class AgencyService {
         throw error;
       }
       console.error('Erreur updateAgency:', error);
-      throw new InternalServerErrorException(
-        'Une erreur est survenue, réessayez plus tard.',
-      );
+      throw new InternalServerErrorException('Une erreur est survenue, réessayez plus tard.');
     }
   }
 
@@ -232,10 +220,7 @@ export class AgencyService {
   // CHANGEMENT DE PLAN
   // ─────────────────────────────────────────
 
-  async changePlan(
-    agencyId: string,
-    newPlan: Plan,
-  ): Promise<{ message: string }> {
+  async changePlan(agencyId: string, newPlan: Plan): Promise<{ message: string }> {
     try {
       await this.findAgency(agencyId);
       const plan = await this.resolveActivePlan(newPlan);
@@ -256,9 +241,7 @@ export class AgencyService {
         throw error;
       }
       console.error('Erreur changePlan:', error);
-      throw new InternalServerErrorException(
-        'Une erreur est survenue, réessayez plus tard.',
-      );
+      throw new InternalServerErrorException('Une erreur est survenue, réessayez plus tard.');
     }
   }
 

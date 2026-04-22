@@ -35,12 +35,9 @@ export class TokenExtractorService {
           code: TOKEN_EXCEPTION.TOKEN_EXPIRED,
         });
       }
-      throw new AppUnauthorizedExceptionService(
-        'Token invalide ou signature incorrecte',
-        {
-          code: TOKEN_EXCEPTION.TOKEN_INVALID,
-        },
-      );
+      throw new AppUnauthorizedExceptionService('Token invalide ou signature incorrecte', {
+        code: TOKEN_EXCEPTION.TOKEN_INVALID,
+      });
     }
   }
 }

@@ -32,9 +32,7 @@ export class ResendService {
     recipient: string,
   ): EmailResult {
     if (error) {
-      this.logger.error(
-        `Failed to send email to ${recipient} — [${error.name}] ${error.message}`,
-      );
+      this.logger.error(`Failed to send email to ${recipient} — [${error.name}] ${error.message}`);
       return {
         success: false,
         error: { code: error.name, message: error.message },
@@ -105,11 +103,7 @@ export class ResendService {
     });
   }
 
-  async sendEmailVerification(
-    to: string,
-    username: string,
-    link: string,
-  ): Promise<EmailResult> {
+  async sendEmailVerification(to: string, username: string, link: string): Promise<EmailResult> {
     return this.sendTemplateEmail({
       to,
       subject: 'Verification Email',

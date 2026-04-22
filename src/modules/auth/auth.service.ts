@@ -1,15 +1,11 @@
-import {
-  BadRequestException,
-  ConflictException,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpStatus, Injectable } from '@nestjs/common';
 import { getAuthInstance } from '_root/lib/auth';
 import { HttpError } from '_root/config/http.error';
 import { UsersService } from '_root/modules/users/users.service';
 import {
   CreateUserDto,
   ForgotPasswordDto,
+  LoginDto,
   ResendVerificationDto,
   ResetPasswordDto,
 } from '_root/modules/auth/auth.dto';
@@ -17,6 +13,44 @@ import {
 @Injectable()
 export class AuthService {
   constructor(private readonly usersService: UsersService) {}
+
+  // ─────────────────────────────────────────
+  // CONNEXION — retourne le token JWT
+  // ─────────────────────────────────────────
+
+  async loginUser(data: LoginDto) {
+    try {
+      const auth = getAuthInstance();
+
+      const response = await auth.api.signInEmail({
+        body: {
+          email: data.email,
+          password: data.password,
+        },
+      });
+
+      if (!response?.token) {
+        throw new HttpError(
+          'Erreur lors de la connexion.',
+          HttpStatus.UNAUTHORIZED,
+          'LOGIN_FAILED',
+        );
+      }
+
+      return {
+        message: 'Connexion réussie',
+        session: response,
+      };
+    } catch (error) {
+      if (error instanceof HttpError) throw error;
+      console.error('Erreur loginUser:', error);
+      throw new HttpError(
+        'Email ou mot de passe incorrect.',
+        HttpStatus.UNAUTHORIZED,
+        'INVALID_CREDENTIALS',
+      );
+    }
+  }
 
   // ─────────────────────────────────────────
   // CRÉATION USER VIA BETTER-AUTH (backend)
@@ -56,9 +90,7 @@ export class AuthService {
         throw error;
       }
       console.error('Erreur createUser:', error);
-      throw new HttpError(
-        'Une erreur interne est survenue. Veuillez réessayer plus tard.',
-      );
+      throw new HttpError('Une erreur interne est survenue. Veuillez réessayer plus tard.');
     }
   }
 
@@ -66,19 +98,13 @@ export class AuthService {
   // RENVOI EMAIL DE VÉRIFICATION
   // ─────────────────────────────────────────
 
-  async sendVerificationEmail(
-    data: ResendVerificationDto,
-  ): Promise<{ message: string }> {
+  async sendVerificationEmail(data: ResendVerificationDto): Promise<{ message: string }> {
     const user = await this.usersService.findUser({ email: data?.email });
-    if (!user)
-      return { message: 'Si ce compte existe, un email a été envoyé.' };
-    if (user.emailVerified)
-      throw new BadRequestException('Email déjà vérifié.');
+    if (!user) return { message: 'Si ce compte existe, un email a été envoyé.' };
+    if (user.emailVerified) throw new BadRequestException('Email déjà vérifié.');
 
     const auth = getAuthInstance();
 
-    // sendVerificationEmail retourne boolean mais déclenche le callback
-    // → authEmailBridge → MailService envoie l'email
     await auth.api.sendVerificationEmail({
       body: {
         email: data?.email,
@@ -90,52 +116,40 @@ export class AuthService {
   }
 
   // ─────────────────────────────────────────
-  // FORGOT PASSWORD — génère le token + envoie l'email
+  // FORGOT PASSWORD
   // ─────────────────────────────────────────
 
   async forgotPassword(data: ForgotPasswordDto): Promise<{ message: string }> {
     try {
       const auth = getAuthInstance();
 
-      // Réponse volontairement identique si email inconnu
-      // pour ne pas exposer les comptes enregistrés
       const user = await this.usersService.findUser({ email: data.email });
       if (!user) {
         return {
-          message:
-            'Si ce compte existe, un lien de réinitialisation a été envoyé.',
+          message: 'Si ce compte existe, un lien de réinitialisation a été envoyé.',
         };
       }
 
-      // Better-Auth génère le token et le stocke en base
-      // Le callback sendResetPassword dans auth.ts est vide → aucun envoi auto
       const response = await auth.api.requestPasswordReset({
-        body: {
-          email: data.email,
-        },
+        body: { email: data.email },
       });
 
       if (!response?.status) {
-        throw new HttpError(
-          'Impossible de générer le lien de réinitialisation.',
-        );
+        throw new HttpError('Impossible de générer le lien de réinitialisation.');
       }
 
       return {
-        message:
-          'Si ce compte existe, un lien de réinitialisation a été envoyé.',
+        message: 'Si ce compte existe, un lien de réinitialisation a été envoyé.',
       };
     } catch (error) {
       if (error instanceof HttpError) throw error;
       console.error('Erreur forgotPassword:', error);
-      throw new HttpError(
-        'Une erreur interne est survenue. Veuillez réessayer plus tard.',
-      );
+      throw new HttpError('Une erreur interne est survenue. Veuillez réessayer plus tard.');
     }
   }
 
   // ─────────────────────────────────────────
-  // RESET PASSWORD — valide le token + met à jour le password
+  // RESET PASSWORD
   // ─────────────────────────────────────────
 
   async resetPassword(data: ResetPasswordDto): Promise<{ message: string }> {
@@ -163,11 +177,7 @@ export class AuthService {
         throw error;
       }
       console.error('Erreur resetPassword:', error);
-      throw new HttpError(
-        'Lien invalide ou expiré.',
-        HttpStatus.BAD_REQUEST,
-        'INVALID_TOKEN',
-      );
+      throw new HttpError('Lien invalide ou expiré.', HttpStatus.BAD_REQUEST, 'INVALID_TOKEN');
     }
   }
 

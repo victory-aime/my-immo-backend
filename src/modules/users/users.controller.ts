@@ -21,12 +21,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { SWAGGER_TAGS } from '_root/config/enum';
-import {
-  AllowAnonymous,
-  AuthGuard,
-  Session,
-  UserSession,
-} from '@thallesp/nestjs-better-auth';
+import { AllowAnonymous, AuthGuard, Session, UserSession } from '@thallesp/nestjs-better-auth';
 import { AuthorizeRoles, MiddlewareGuard } from '_root/guard/middleware.guard';
 import { Role } from '../../../prisma/generated/enums';
 import { convertToInteger } from '_root/config/convert';

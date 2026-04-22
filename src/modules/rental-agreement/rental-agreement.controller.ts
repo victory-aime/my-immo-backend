@@ -12,9 +12,7 @@ import { convertToInteger } from '_root/config/convert';
 
 @Controller()
 export class RentalAgreementController {
-  constructor(
-    private readonly rentalAgreementService: RentalAgreementService,
-  ) {}
+  constructor(private readonly rentalAgreementService: RentalAgreementService) {}
 
   // @Post(API_URL.RENTAL_AGREEMENT.APPROVE)
   // @ApiBody({})

@@ -41,14 +41,9 @@ export class PackService {
     });
 
     if (foundFeatures.length !== featureIds.length) {
-      const missing = featureIds.filter(
-        (id) => !foundFeatures.some((f) => f.id === id),
-      );
+      const missing = featureIds.filter((id) => !foundFeatures.some((f) => f.id === id));
 
-      throw new HttpError(
-        `Features introuvables : ${missing.join(', ')}`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpError(`Features introuvables : ${missing.join(', ')}`, HttpStatus.BAD_REQUEST);
     }
 
     // 3. Créer le plan + ses PlanFeatures en une seule transaction
@@ -112,9 +107,7 @@ export class PackService {
         });
 
         if (foundFeatures.length !== featureIds.length) {
-          const missing = featureIds.filter(
-            (id) => !foundFeatures.some((f) => f.id === id),
-          );
+          const missing = featureIds.filter((id) => !foundFeatures.some((f) => f.id === id));
           throw new Error(`Features introuvables : ${missing.join(', ')}`);
         }
 

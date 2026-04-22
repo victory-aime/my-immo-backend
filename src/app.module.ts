@@ -1,10 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import * as winston from 'winston';
-import {
-  utilities as nestWinstonModuleUtilities,
-  WinstonModule,
-} from 'nest-winston';
+import { utilities as nestWinstonModuleUtilities, WinstonModule } from 'nest-winston';
 import { UsersModule } from './modules/users/users.module';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { APP_GUARD } from '@nestjs/core';
@@ -20,6 +17,7 @@ import { CommonModule } from '_root/modules/common/common.module';
 import { InvitationModule } from '_root/modules/invitations/invitation.module';
 import { AnnonceModule } from '_root/modules/annonce/annonce.module';
 import { TeamModule } from '_root/modules/team/team.module';
+import { LeadsModule } from '_root/modules/leads/leads.module'; // ✅ ajouté
 
 @Module({
   imports: [
@@ -63,6 +61,7 @@ import { TeamModule } from '_root/modules/team/team.module';
     AnnonceModule,
     InvitationModule,
     TeamModule,
+    LeadsModule, // ✅ ajouté
   ],
 
   providers: [

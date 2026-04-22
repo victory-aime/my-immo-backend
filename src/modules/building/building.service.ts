@@ -70,10 +70,7 @@ export class BuildingService {
     };
   }
 
-  async createBuilding(
-    data: CreateBuildingDto,
-    ownerId: string,
-  ): Promise<{ message: string }> {
+  async createBuilding(data: CreateBuildingDto, ownerId: string): Promise<{ message: string }> {
     await this.agencyService.checkAgencyOwnership(data.agencyId);
 
     const uniqueName = await this.prisma.batiment.findUnique({
@@ -100,10 +97,7 @@ export class BuildingService {
     };
   }
 
-  async updateBuilding(
-    data: UpdateBuildingDto,
-    ownerId: string,
-  ): Promise<{ message: string }> {
+  async updateBuilding(data: UpdateBuildingDto, ownerId: string): Promise<{ message: string }> {
     await this.agencyService.checkAgencyOwnership(data.agencyId);
 
     const building = await this.prisma.batiment.findUnique({
@@ -111,11 +105,7 @@ export class BuildingService {
     });
 
     if (!building) {
-      throw new HttpError(
-        'Aucun bâtiment trouvé',
-        HttpStatus.NOT_FOUND,
-        'BUILDING_NOT_EXIST',
-      );
+      throw new HttpError('Aucun bâtiment trouvé', HttpStatus.NOT_FOUND, 'BUILDING_NOT_EXIST');
     }
 
     if (data.name && data.name !== building.name) {
@@ -143,11 +133,7 @@ export class BuildingService {
       });
 
       if (!land) {
-        throw new HttpError(
-          'Terrain introuvable',
-          HttpStatus.NOT_FOUND,
-          'LAND_NOT_FOUND',
-        );
+        throw new HttpError('Terrain introuvable', HttpStatus.NOT_FOUND, 'LAND_NOT_FOUND');
       }
     }
 
