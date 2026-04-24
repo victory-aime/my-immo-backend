@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { LeadStatus } from '../../../prisma/generated/enums';
 
 // ─── 1. Créer un lead (client connecté uniquement) ────────────────
@@ -48,29 +48,6 @@ export class AssignLeadDto {
 
 // ─── 4. Convertir un lead en locataire ───────────────────────────
 export class ConvertToTenantDto {
-  @ApiProperty({
-    example: 'Ami Diallo',
-    description: 'Nom complet du locataire',
-  })
-  @IsString()
-  name: string;
-
-  @ApiPropertyOptional({
-    example: 'ami@email.com',
-    description: 'Email du locataire',
-  })
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @ApiPropertyOptional({
-    example: '+221 77 000 00 00',
-    description: 'Téléphone du locataire',
-  })
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
   @ApiPropertyOptional({
     example: ['https://cloudinary.com/cni.pdf'],
     description: 'URLs des documents du locataire (CNI, justificatifs...)',

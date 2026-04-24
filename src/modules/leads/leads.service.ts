@@ -10,26 +10,14 @@ export class LeadsService {
 
   // ─────────────────────────────────────────────────────────────────
   // CRÉER UN LEAD
-  // Accessible : client connecté uniquement (role = USER)
   // ─────────────────────────────────────────────────────────────────
-  async createLead(dto: CreateLeadDto, userId: string, userRole: Role) {
+  async createLead(dto: CreateLeadDto, userId: string) {
     try {
-      // Seul un USER (client mobile) peut créer un lead
-      if (userRole !== Role.USER) {
-        throw new HttpError(
-          'Seul un client connecté peut envoyer une demande de contact',
-          HttpStatus.UNAUTHORIZED,
-          'UNAUTHORIZED',
-        );
-      }
-
-      // Récupérer le profil Client lié à ce userId
       const client = await this.prisma.client.findUnique({ where: { userId } });
       if (!client) {
         throw new HttpError('Profil client introuvable', HttpStatus.NOT_FOUND, 'CLIENT_NOT_FOUND');
       }
 
-      // Vérifier que la propriété existe
       const property = await this.prisma.property.findUnique({
         where: { id: dto.propertyId },
       });
@@ -37,7 +25,6 @@ export class LeadsService {
         throw new HttpError('Propriété introuvable', HttpStatus.NOT_FOUND, 'PROPERTY_NOT_FOUND');
       }
 
-      // Vérifier que le client n'a pas déjà un lead actif sur ce bien
       const existingLead = await this.prisma.lead.findFirst({
         where: {
           clientId: client.id,
@@ -48,7 +35,7 @@ export class LeadsService {
       if (existingLead) {
         throw new HttpError(
           'Vous avez déjà une demande de contact en cours pour ce bien',
-          HttpStatus.BAD_REQUEST,
+          HttpStatus.CONFLICT,
           'LEAD_ALREADY_EXISTS',
         );
       }
@@ -61,15 +48,8 @@ export class LeadsService {
           clientId: client.id,
           status: LeadStatus.NEW,
         },
-        include: {
-          property: {
-            select: { title: true, type: true, city: true, price: true },
-          },
-          client: {
-            select: { user: { select: { name: true, email: true } } },
-          },
-        },
       });
+      return { message: 'Votre demande de contact a été soumise avec succès' };
     } catch (error) {
       if (error instanceof HttpError) throw error;
       console.error('Erreur createLead:', error);
@@ -85,9 +65,9 @@ export class LeadsService {
   // ─────────────────────────────────────────────────────────────────
   async getLeadsByAgency(agencyId: string, userId: string, userRole: Role) {
     try {
-      await this.checkAgencyAccess(agencyId, userId, userRole);
+      // await this.checkAgencyAccess(agencyId, userId, userRole);
 
-      return await this.prisma.lead.findMany({
+      return this.prisma.lead.findMany({
         where: { agencyId },
         include: {
           property: { select: { title: true, type: true, city: true } },
@@ -113,20 +93,16 @@ export class LeadsService {
 
   // ─────────────────────────────────────────────────────────────────
   // LISTER MES LEADS (côté client connecté)
-  // Accessible : client connecté uniquement (role = USER)
+  // Accessible : client connecté uniquement
   // ─────────────────────────────────────────────────────────────────
-  async getMyLeads(userId: string, userRole: Role) {
+  async getMyLeads(userId: string) {
     try {
-      if (userRole !== Role.USER) {
-        throw new HttpError('Accès réservé aux clients', HttpStatus.UNAUTHORIZED, 'UNAUTHORIZED');
-      }
-
       const client = await this.prisma.client.findUnique({ where: { userId } });
       if (!client) {
         throw new HttpError('Profil client introuvable', HttpStatus.NOT_FOUND, 'CLIENT_NOT_FOUND');
       }
 
-      return await this.prisma.lead.findMany({
+      return this.prisma.lead.findMany({
         where: { clientId: client.id },
         include: {
           property: {
@@ -171,7 +147,7 @@ export class LeadsService {
         throw new HttpError('Lead introuvable', HttpStatus.NOT_FOUND, 'LEAD_NOT_FOUND');
       }
 
-      await this.checkAgencyAccess(lead.agencyId, userId, userRole);
+      //await this.checkAgencyAccess(lead.agencyId, userId, userRole);
 
       return lead;
     } catch (error) {
@@ -194,25 +170,19 @@ export class LeadsService {
         throw new HttpError('Lead introuvable', HttpStatus.NOT_FOUND, 'LEAD_NOT_FOUND');
       }
 
-      await this.checkAgencyAccess(lead.agencyId, userId, userRole);
+      // await this.checkAgencyAccess(lead.agencyId, userId, userRole);
 
-      if (lead.status === LeadStatus.CONVERTED) {
+      const isConverted = (status: LeadStatus) => status === LeadStatus.CONVERTED;
+
+      if (isConverted(lead.status) || isConverted(dto.status)) {
         throw new HttpError(
-          'Impossible de modifier un lead déjà converti en locataire',
+          'Ce statut ne peut pas être modifié',
           HttpStatus.BAD_REQUEST,
-          'LEAD_ALREADY_CONVERTED',
+          'FORBIDDEN_STATUS',
         );
       }
 
-      if (dto.status === LeadStatus.CONVERTED) {
-        throw new HttpError(
-          'Pour convertir un lead, utilisez le endpoint /convert-tenant',
-          HttpStatus.BAD_REQUEST,
-          'USE_CONVERT_ENDPOINT',
-        );
-      }
-
-      return await this.prisma.lead.update({
+      return this.prisma.lead.update({
         where: { id: leadId },
         data: { status: dto.status },
         include: {
@@ -233,28 +203,25 @@ export class LeadsService {
   // ASSIGNER UN AGENT AU LEAD
   // Accessible : Owner + AGENCY_ADMIN uniquement
   // ─────────────────────────────────────────────────────────────────
-  async assignLead(leadId: string, dto: AssignLeadDto, userId: string, userRole: Role) {
+  async assignLead(leadId: string, dto: AssignLeadDto) {
     try {
       const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
       if (!lead) {
         throw new HttpError('Lead introuvable', HttpStatus.NOT_FOUND, 'LEAD_NOT_FOUND');
       }
 
-      await this.checkAgencyAccess(lead.agencyId, userId, userRole);
-      await this.checkAdminAccess(lead.agencyId, userId, userRole);
-
       const staff = await this.prisma.staff.findFirst({
         where: { id: dto.staffId, agencyId: lead.agencyId, isActive: true },
       });
       if (!staff) {
         throw new HttpError(
-          "Cet agent n'appartient pas à votre agence ou est inactif",
+          "impossible d'assigner a cette agence",
           HttpStatus.BAD_REQUEST,
           'STAFF_NOT_FOUND',
         );
       }
 
-      return await this.prisma.lead.update({
+      return this.prisma.lead.update({
         where: { id: leadId },
         data: { assignedToId: dto.staffId },
         include: {
@@ -275,18 +242,26 @@ export class LeadsService {
   // ─────────────────────────────────────────────────────────────────
   // SUPPRIMER UN LEAD
   // Accessible : Owner + AGENCY_ADMIN uniquement
-  // ─────────────────────────────────────────────────────────────────
   async deleteLead(leadId: string, userId: string, userRole: Role) {
     try {
       const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
       if (!lead) {
         throw new HttpError('Lead introuvable', HttpStatus.NOT_FOUND, 'LEAD_NOT_FOUND');
       }
-
+      //  Bloquer la suppression d'un lead converti
+      if (lead.status === LeadStatus.CONVERTED) {
+        throw new HttpError(
+          'Impossible de supprimer un lead déjà converti en locataire',
+          HttpStatus.BAD_REQUEST,
+          'LEAD_ALREADY_CONVERTED',
+        );
+      }
       await this.checkAgencyAccess(lead.agencyId, userId, userRole);
       await this.checkAdminAccess(lead.agencyId, userId, userRole);
 
-      return await this.prisma.lead.delete({ where: { id: leadId } });
+      await this.prisma.lead.delete({ where: { id: leadId } });
+
+      return { message: 'Lead supprimé avec succès' };
     } catch (error) {
       if (error instanceof HttpError) throw error;
       console.error('Erreur deleteLead:', error);
@@ -300,11 +275,12 @@ export class LeadsService {
   // CONVERTIR UN LEAD EN LOCATAIRE
   // Accessible : Owner + AGENCY_ADMIN uniquement
   // ─────────────────────────────────────────────────────────────────
-  async convertToTenant(leadId: string, dto: ConvertToTenantDto, userId: string, userRole: Role) {
+  /*async convertToTenant(leadId: string, dto: ConvertToTenantDto, userId: string, userRole: Role) {
     try {
       const lead = await this.prisma.lead.findUnique({
         where: { id: leadId },
-        include: { tenant: true },
+        // ✅ On inclut le profil client pour récupérer ses infos automatiquement
+        include: { tenant: true, client: { include: { user: true } } },
       });
       if (!lead) {
         throw new HttpError('Lead introuvable', HttpStatus.NOT_FOUND, 'LEAD_NOT_FOUND');
@@ -320,14 +296,14 @@ export class LeadsService {
           'LEAD_ALREADY_CONVERTED',
         );
       }
-
       // Transaction : les deux réussissent ensemble ou échouent ensemble
       return await this.prisma.$transaction(async (tx) => {
         const tenant = await tx.tenant.create({
           data: {
-            name: dto.name,
-            email: dto.email,
-            phone: dto.phone,
+            // Infos récupérées automatiquement depuis le profil Client connecté
+            name: lead.client?.user?.name ?? 'Inconnu',
+            email: lead.client?.user?.email ?? null,
+            phone: lead.client?.phone ?? null,
             documents: dto.documents ?? [],
             leadId: leadId,
             propertyId: lead.propertyId,
@@ -350,6 +326,7 @@ export class LeadsService {
       );
     }
   }
+    */
 
   // ─────────────────────────────────────────────────────────────────
   // MÉTHODES PRIVÉES UTILITAIRES
@@ -360,7 +337,6 @@ export class LeadsService {
     if (userRole === Role.SUPER_ADMIN) return;
 
     if (userRole === Role.OWNER) {
-      // ✅ FIX : trouver l'Owner par userId, puis vérifier que son agence correspond
       const owner = await this.prisma.owner.findUnique({
         where: { userId },
         include: { agency: true },

@@ -31,9 +31,8 @@ export class LeadsController {
   async createLead(
     @Body() dto: CreateLeadDto,
     @Query('userId') userId: string, // ⚠️ TEMPORAIRE
-    @Query('userRole') userRole: string, // ⚠️ TEMPORAIRE
   ) {
-    return this.leadsService.createLead(dto, userId, userRole as Role);
+    return this.leadsService.createLead(dto, userId);
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -45,9 +44,8 @@ export class LeadsController {
   @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
   async getMyLeads(
     @Query('userId') userId: string, // ⚠️ TEMPORAIRE
-    @Query('userRole') userRole: string, // ⚠️ TEMPORAIRE
   ) {
-    return this.leadsService.getMyLeads(userId, userRole as Role);
+    return this.leadsService.getMyLeads(userId);
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -105,13 +103,8 @@ export class LeadsController {
   @ApiBody({ type: AssignLeadDto })
   @ApiOkResponse({ description: 'Agent assigné avec succès' })
   @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
-  async assignLead(
-    @Query('leadId') leadId: string,
-    @Body() dto: AssignLeadDto,
-    @Query('userId') userId: string, // ⚠️ TEMPORAIRE
-    @Query('userRole') userRole: string, // ⚠️ TEMPORAIRE
-  ) {
-    return this.leadsService.assignLead(leadId, dto, userId, userRole as Role);
+  async assignLead(@Query('leadId') leadId: string, @Body() dto: AssignLeadDto) {
+    return this.leadsService.assignLead(leadId, dto);
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -122,7 +115,7 @@ export class LeadsController {
   @ApiBody({ type: ConvertToTenantDto })
   @ApiOkResponse({ description: 'Lead converti en locataire avec succès' })
   @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
-  async convertToTenant(
+  /* async convertToTenant(
     @Query('leadId') leadId: string,
     @Body() dto: ConvertToTenantDto,
     @Query('userId') userId: string, // ⚠️ TEMPORAIRE
@@ -130,6 +123,7 @@ export class LeadsController {
   ) {
     return this.leadsService.convertToTenant(leadId, dto, userId, userRole as Role);
   }
+     */
 
   // ─────────────────────────────────────────────────────────────────
   // DELETE v1/secure/leads/delete?leadId=xxx
