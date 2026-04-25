@@ -4,12 +4,13 @@ import {
   IsBoolean,
   IsEmail,
   IsEnum,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
   MinLength,
 } from 'class-validator';
-import { Plan } from '../../../prisma/generated/enums';
+import { BillingCycle, Plan } from '../../../prisma/generated/enums';
 
 export class createAgencyOwnerDto {
   @IsString()
@@ -47,9 +48,11 @@ export class createAgencyOwnerDto {
   documents?: string[];
 
   // ✅ Plan choisi à l'onboarding (BASIC par défaut)
-  @IsOptional()
-  @IsEnum(Plan)
-  plan?: Plan;
+  @IsObject()
+  plan: {
+    planId: string;
+    billingCycle: BillingCycle;
+  };
 
   @IsEmail()
   userEmail: string;

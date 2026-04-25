@@ -53,12 +53,14 @@ export class AgencyController {
   })
   @UseInterceptors(FileFieldsInterceptor([{ name: 'documents', maxCount: 5 }]))
   async createAgency(
-    @Body() data: createAgencyOwnerDto,
+    @Body('data') rawData: string,
     @UploadedFiles()
     files: {
       documents?: Express.Multer.File[];
     },
   ) {
+    const data: createAgencyOwnerDto = JSON.parse(rawData);
+
     let cloudinaryDocumentsFileUrl: string[] = [];
 
     if (files?.documents?.length) {

@@ -1,0 +1,17 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '_root/database/prisma.service';
+
+@Injectable()
+export class CommonService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async getAllPlans() {
+    return this.prisma.subscriptionPlan.findMany({
+      include: {
+        planFeatures: { include: { feature: true } },
+        pricings: true,
+      },
+      orderBy: { pricingType: 'asc' },
+    });
+  }
+}

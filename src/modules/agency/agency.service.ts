@@ -7,10 +7,19 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { createAgencyOwnerDto, updateAgencyDto } from './agency.dto';
-import { AgencyStatus, Plan, Role, SubscriptionStatus } from '../../../prisma/generated/enums';
+import {
+  AgencyStatus,
+  BillingCycle,
+  Plan,
+  PricingType,
+  Role,
+  SubscriptionStatus,
+} from '../../../prisma/generated/enums';
 import { UsersService } from '_root/modules/users/users.service';
 import { HttpError } from '_root/config/http.error';
 import { getAuthInstance } from '_root/lib/auth';
+import { Decimal } from '@prisma/client/runtime/index-browser';
+import { Subscription } from '../../../prisma/generated/client';
 
 @Injectable()
 export class AgencyService {
@@ -83,20 +92,24 @@ export class AgencyService {
   }
 
   // Récupère le plan actif en base, lève une erreur explicite s'il est absent
-  private async resolveActivePlan(planName: Plan) {
+  private async resolveActivePlan(planId: string) {
     const plan = await this.prismaService.subscriptionPlan.findUnique({
-      where: { name: planName },
+      where: { id: planId },
+      include: {
+        pricings: true,
+      },
     });
     if (!plan) {
-      throw new HttpError(
-        `Le plan ${planName} n'existe pas ou n'est pas configuré.`,
-        HttpStatus.BAD_REQUEST,
-        'PLAN_NOT_FOUND',
-      );
+      return this.prismaService.subscriptionPlan.findUnique({
+        where: { name: 'BASIC_COMMISSION' },
+        include: {
+          pricings: true,
+        },
+      });
     }
     if (!plan.isActive) {
       throw new HttpError(
-        `Le plan ${planName} n'est pas disponible actuellement.`,
+        `Le plan ${plan.name} n'est pas disponible actuellement.`,
         HttpStatus.BAD_REQUEST,
         'PLAN_INACTIVE',
       );
@@ -110,16 +123,13 @@ export class AgencyService {
 
   async createAgency(data: createAgencyOwnerDto): Promise<{ message: string }> {
     try {
-      // 1. Vérifier que l'email n'est pas déjà utilisé
       const existingUser = await this.userService.findUser({
         email: data?.userEmail,
       });
-
       if (existingUser) {
         throw new BadRequestException('Impossible de créer un compte avec cet email');
       }
 
-      // 2. Créer l'utilisateur via Better-Auth
       const { user } = await getAuthInstance().api.signUpEmail({
         body: {
           name: data?.username,
@@ -128,24 +138,51 @@ export class AgencyService {
         },
       });
 
-      // 3. Résoudre le plan AVANT la transaction pour fail fast
-      const selectedPlan = data.plan ?? Plan.BASIC;
-      const plan = await this.resolveActivePlan(selectedPlan);
+      const plan = await this.resolveActivePlan(data.plan?.planId);
+      const isCommission = plan?.pricingType === PricingType.COMMISSION;
+      const isSubscription = plan?.pricingType === PricingType.SUBSCRIPTION;
 
-      // 4. Tout créer en une seule transaction atomique
+      // ─────────────────────────────────────────
+      // 4. SUBSCRIPTION PRICING (IF NEEDED)
+      // ─────────────────────────────────────────
+      let selectedPricing:
+        | {
+            id: string;
+            createdAt: Date;
+            planId: string;
+            billingCycle: BillingCycle;
+            price: Decimal;
+            currency: string;
+            discountPercentage: Decimal | null;
+          }
+        | undefined = undefined;
+
+      if (isSubscription) {
+        selectedPricing = plan?.pricings?.find(
+          (p) => p.billingCycle === (data?.plan?.billingCycle ?? BillingCycle.MONTHLY),
+        );
+
+        if (!selectedPricing) {
+          throw new BadRequestException('Cycle de facturation invalide pour ce plan');
+        }
+      }
+
+      // ─────────────────────────────────────────
+      // 5. TRANSACTION ATOMIQUE
+      // ─────────────────────────────────────────
       await this.prismaService.$transaction(async (tx) => {
-        // 4a. Créer owner
+        // 5a. OWNER
         const owner = await tx.owner.create({
           data: { userId: user.id },
         });
 
-        // 4b. Promouvoir le User en OWNER
+        // 5b. ROLE UPDATE
         await tx.user.update({
           where: { id: user.id },
           data: { role: Role.OWNER },
         });
 
-        // 4c. Créer l'agence liée à owner
+        // 5c. AGENCY
         const agency = await tx.agency.create({
           data: {
             name: data.name,
@@ -158,16 +195,56 @@ export class AgencyService {
           },
         });
 
-        // 4d. Créer l'abonnement sur le plan choisi
+        // ─────────────────────────────────────────
+        // 5d. SUBSCRIPTION DATA
+        // ─────────────────────────────────────────
+        const subscriptionData: Subscription | any = {
+          agencyId: agency.id,
+          planId: plan?.id!,
+          pricingType: plan?.pricingType!,
+        };
+
+        // ─────────────────────────────────────────
+        // COMMISSION PLAN LOGIC
+        // ─────────────────────────────────────────
+        if (isCommission) {
+          subscriptionData.commissionRate = plan.commissionRate;
+        }
+
+        // ─────────────────────────────────────────
+        // SUBSCRIPTION PLAN LOGIC
+        // ─────────────────────────────────────────
+        if (isSubscription) {
+          const now = new Date();
+          const billingCycle = selectedPricing?.billingCycle;
+          const endDate = new Date(now);
+
+          if (billingCycle === BillingCycle.MONTHLY) {
+            endDate.setMonth(endDate.getMonth() + 1);
+          }
+
+          if (billingCycle === BillingCycle.YEARLY) {
+            endDate.setFullYear(endDate.getFullYear() + 1);
+          }
+
+          subscriptionData.billingCycle = billingCycle!;
+          subscriptionData.price = selectedPricing?.price!;
+          subscriptionData.currency = selectedPricing?.currency!;
+          subscriptionData.currentPeriodStart = now;
+          subscriptionData.currentPeriodEnd = endDate;
+        }
+
+        // ─────────────────────────────────────────
+        // 5e. CREATE SUBSCRIPTION
+        // ─────────────────────────────────────────
         await tx.subscription.create({
-          data: {
-            agencyId: agency.id,
-            planId: plan.id,
-            commissionRate: plan.commissionRate,
-          },
+          data: subscriptionData,
         });
       });
 
+      // ─────────────────────────────────────────
+      // SUCCESS RESPONSE
+      // ─────────────────────────────────────────
       return {
         message: 'Votre agence a été créée avec succès et est en attente de validation.',
       };
@@ -177,7 +254,7 @@ export class AgencyService {
         error instanceof NotFoundException ||
         error instanceof HttpError
       ) {
-        throw new HttpError('Une erreur est survenu veuillez ressayer plus tard');
+        throw new HttpError('Une erreur est survenue, veuillez réessayer plus tard');
       }
       console.error('Erreur onboarding agence:', error);
       await this.prismaService.user.delete({
@@ -229,8 +306,7 @@ export class AgencyService {
       await this.prismaService.subscription.update({
         where: { agencyId },
         data: {
-          planId: plan.id,
-          commissionRate: plan.commissionRate,
+          planId: plan?.id,
           updatedAt: new Date(),
         },
       });

@@ -27,8 +27,8 @@ model User {
   emailVerified    Boolean    @default(false)
   twoFactorEnabled Boolean?
   status           UserStatus @default(ACTIVE)
-  theme_color      String?
-  theme_mode       String?
+  theme_color      String?    @default("#673ab6")
+  theme_mode       String?    @default("system")
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
@@ -362,14 +362,9 @@ model Lead {
   status  LeadStatus @default(NEW)
   message String?
 
-  // Côté PUBLIC : infos saisies manuellement
-  guestName  String?
-  guestPhone String?
-  guestEmail String?
-
   // Côté PRIVÉ : client connecté
-  clientId String?
-  client   Client? @relation(fields: [clientId], references: [id])
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   // Agent assigné
   assignedToId String?
@@ -593,34 +588,82 @@ model InvitationPermission {
 // ─────────────────────────────────────────
 
 model Subscription {
-  id             String             @id @default(uuid())
-  agencyId       String
-  planId         String
-  plan           SubscriptionPlan   @relation(fields: [planId], references: [id])
-  agency         Agency             @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  status         SubscriptionStatus @default(ACTIVE)
-  // 🆕 snapshot sécurité
-  commissionRate Decimal            @db.Decimal(5, 2) // ex: 10.00 pour 10% de commission sur les transactions
+  id       String             @id @default(uuid())
+  agencyId String
+  planId   String
+  plan     SubscriptionPlan   @relation(fields: [planId], references: [id])
+  agency   Agency             @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  status   SubscriptionStatus @default(ACTIVE)
+
+  // stratégie appliquée
+  pricingType  PricingType   @default(COMMISSION)
+  billingCycle BillingCycle?
+
+  // snapshot pricing SaaS
+  price    Decimal? @db.Decimal(10, 2)
+  currency String?
+
+  // snapshot commission
+  commissionRate Decimal? @db.Decimal(5, 2)
+
+  // cycle de facturation
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+
+  // 🔁 gestion abonnement
+  cancelAtPeriodEnd Boolean   @default(false)
+  canceledAt        DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([agencyId])
-  @@index([planId])
+  @@index([planId, agencyId])
   @@map("subscription")
 }
 
 model SubscriptionPlan {
-  id             String         @id @default(cuid())
-  name           Plan           @unique @default(BASIC)
-  commissionRate Decimal        @db.Decimal(5, 2) // ex: 10 = 10%
-  isActive       Boolean        @default(true)
-  planFeatures   PlanFeature[]
-  subscriptions  Subscription[]
+  id             String      @id @default(cuid())
+  name           Plan        @unique @default(BASIC_COMMISSION)
+  pricingType    PricingType @default(COMMISSION)
+  popular        Boolean     @default(false)
+  // uniquement si Commission COMMISSION
+  commissionRate Decimal?    @db.Decimal(5, 2)
+
+  // uniquement si SUBSCRIPTION
+  pricings PlanPricing[]
+
+  planCategory PlanCategory @default(COMMISSION_BASED) // 🔥 AJOUT
+
+  isActive Boolean @default(true)
+
+  planFeatures  PlanFeature[]
+  subscriptions Subscription[]
 
   createdAt DateTime @default(now())
 
   @@map("subscription_plan")
+}
+
+model PlanPricing {
+  id String @id @default(uuid())
+
+  planId String
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  billingCycle BillingCycle
+
+  // 💵 prix réel facturé
+  price    Decimal @db.Decimal(10, 2)
+  currency String // "EUR", "TND", etc.
+
+  // 💸 optionnel (pour affichage marketing)
+  discountPercentage Decimal? @db.Decimal(5, 2)
+
+  createdAt DateTime @default(now())
+
+  @@unique([planId, billingCycle])
+  @@map("plan_pricing")
 }
 
 model Feature {
@@ -782,9 +825,12 @@ enum FeatureCategory {
 }
 
 enum Plan {
-  BASIC
-  STANDARD // ✅ FIX: PRO → STANDARD (conforme capture)
-  PREMIUM
+  BASIC_COMMISSION
+  STANDARD_COMMISSION
+  PREMIUM_COMMISSION
+  BASIC_SUB
+  STANDARD_SUB
+  PREMIUM_SUB
 }
 
 enum TransactionStatus {
@@ -877,4 +923,19 @@ enum ReportType {
   PERFORMANCE
   LEADS
   CUSTOM
+}
+
+enum PricingType {
+  COMMISSION
+  SUBSCRIPTION
+}
+
+enum PlanCategory {
+  COMMISSION_BASED
+  SUBSCRIPTION_BASED
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
 }
