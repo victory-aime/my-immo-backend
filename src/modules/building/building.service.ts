@@ -18,7 +18,7 @@ export class BuildingService {
   ) {}
 
   async getAllBuildingByAgency(query: BuildingFilterDto) {
-    await this.agencyService.checkAgencyOwnership(query?.agencyId);
+    await this.agencyService.agencyAccessControl(query?.agencyId, query.userId);
 
     const pageInitial = convertToInteger(query?.initialPage) || 1;
     const limitPage = convertToInteger(query?.limitPerPage) || 10;
@@ -70,8 +70,8 @@ export class BuildingService {
     };
   }
 
-  async createBuilding(data: CreateBuildingDto, ownerId: string): Promise<{ message: string }> {
-    await this.agencyService.checkAgencyOwnership(data.agencyId);
+  async createBuilding(data: CreateBuildingDto): Promise<{ message: string }> {
+    await this.agencyService.agencyAccessControl(data.agencyId, data.userId);
 
     const uniqueName = await this.prisma.batiment.findUnique({
       where: { name_agencyId: { name: data?.name, agencyId: data?.agencyId } },
@@ -85,10 +85,12 @@ export class BuildingService {
       );
     }
 
+    const { userId, ...values } = data;
+
     await this.prisma.batiment.create({
       data: {
-        ...data,
-        landId: data.landId && data.landId !== '' ? data.landId : undefined,
+        ...values,
+        landId: values.landId && values.landId !== '' ? values.landId : undefined,
       },
     });
 
@@ -97,8 +99,8 @@ export class BuildingService {
     };
   }
 
-  async updateBuilding(data: UpdateBuildingDto, ownerId: string): Promise<{ message: string }> {
-    await this.agencyService.checkAgencyOwnership(data.agencyId);
+  async updateBuilding(data: UpdateBuildingDto): Promise<{ message: string }> {
+    await this.agencyService.agencyAccessControl(data.agencyId, data.userId);
 
     const building = await this.prisma.batiment.findUnique({
       where: { id: data.id },
@@ -138,7 +140,7 @@ export class BuildingService {
     }
 
     // 5. Clean payload
-    const { id, agencyId, landId, ...values } = data;
+    const { id, agencyId, userId, landId, ...values } = data;
 
     // 6. Update
     await this.prisma.batiment.update({
@@ -165,8 +167,8 @@ export class BuildingService {
     };
   }
 
-  async deleteBuilding(id: string, agencyId: string) {
-    await this.agencyService.checkAgencyOwnership(agencyId);
+  async deleteBuilding(id: string, agencyId: string, userId: string) {
+    await this.agencyService.agencyAccessControl(agencyId, userId);
     await this.prisma.batiment.delete({
       where: { id },
     });

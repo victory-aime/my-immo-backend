@@ -4,10 +4,14 @@ import { HttpError } from '_root/config/http.error';
 import { CreateAnnonceDto, UpdateAnnonceDto } from '_root/modules/annonce/annonce.dto';
 import { AnnonceStatus } from '../../../prisma/generated/enums';
 import { Annonce } from '../../../prisma/generated/client';
+import { AgencyService } from '../agency/agency.service';
 
 @Injectable()
 export class AnnonceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly agencyService: AgencyService,
+  ) {}
 
   // Vérification centralisée
   private async ensureNoActiveAnnonce(propertyId: string, excludeId?: string) {
@@ -30,6 +34,7 @@ export class AnnonceService {
 
   // 1. CREATE
   async createAnnonce(dto: CreateAnnonceDto): Promise<{ message: string }> {
+    await this.agencyService.agencyAccessControl(dto.agencyId!, dto.userId!);
     if (!dto.galleryImages?.length) {
       throw new HttpError(
         'Vous devez fournir au moins une image.',
@@ -78,10 +83,8 @@ export class AnnonceService {
   }
 
   // 3. LIST BY AGENCY
-  async findAnnoncesByAgency(agencyId: string): Promise<Annonce[]> {
-    if (!agencyId) {
-      throw new HttpError('agencyId requis', HttpStatus.BAD_REQUEST, 'MISSING_AGENCY_ID');
-    }
+  async findAnnoncesByAgency(agencyId: string, userId: string): Promise<Annonce[]> {
+    await this.agencyService.agencyAccessControl(agencyId, userId);
 
     return this.prisma.annonce.findMany({
       where: {
@@ -93,7 +96,9 @@ export class AnnonceService {
   }
 
   // 4. UPDATE
-  async updateAnnonce(dto: UpdateAnnonceDto): Promise<Annonce> {
+  async updateAnnonce(dto: UpdateAnnonceDto): Promise<{ message: string }> {
+    await this.agencyService.agencyAccessControl(dto.agencyId!, dto.userId!);
+
     const annonce = await this.prisma.annonce.findUnique({
       where: { id: dto.id },
     });
@@ -109,7 +114,7 @@ export class AnnonceService {
       await this.ensureNoActiveAnnonce(annonce.propertyId, dto.id);
     }
 
-    return this.prisma.annonce.update({
+    await this.prisma.annonce.update({
       where: { id: dto.id },
       data: {
         description: dto.description ?? annonce.description,
@@ -120,6 +125,9 @@ export class AnnonceService {
       },
       include: { property: true },
     });
+    return {
+      message: 'Annonce mise a jouur',
+    };
   }
 
   // 5. DELETE

@@ -1,12 +1,16 @@
 import { HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { HttpError } from '_root/config/http.error';
-import { AssignLeadDto, ConvertToTenantDto, CreateLeadDto, UpdateLeadStatusDto } from './leads.dto';
-import { AgencyRole, LeadStatus, Role } from '../../../prisma/generated/enums';
+import { AssignLeadDto,  CreateLeadDto, UpdateLeadStatusDto } from './leads.dto';
+import {  LeadStatus } from '../../../prisma/generated/enums';
+import { AgencyService } from '../agency/agency.service';
 
 @Injectable()
 export class LeadsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly agencyService: AgencyService,
+  ) {}
 
   // ─────────────────────────────────────────────────────────────────
   // CRÉER UN LEAD
@@ -40,7 +44,7 @@ export class LeadsService {
         );
       }
 
-      return await this.prisma.lead.create({
+      await this.prisma.lead.create({
         data: {
           propertyId: dto.propertyId,
           agencyId: property.agencyId,
@@ -63,9 +67,9 @@ export class LeadsService {
   // LISTER LES LEADS D'UNE AGENCE
   // Accessible : Owner + Staff actif de l'agence
   // ─────────────────────────────────────────────────────────────────
-  async getLeadsByAgency(agencyId: string, userId: string, userRole: Role) {
+  async getLeadsByAgency(agencyId: string, userId: string) {
     try {
-      // await this.checkAgencyAccess(agencyId, userId, userRole);
+      await this.agencyService.agencyAccessControl(agencyId, userId);
 
       return this.prisma.lead.findMany({
         where: { agencyId },
@@ -126,8 +130,10 @@ export class LeadsService {
   // DÉTAIL D'UN LEAD
   // Accessible : Owner + Staff de l'agence
   // ─────────────────────────────────────────────────────────────────
-  async getLeadById(leadId: string, userId: string, userRole: Role) {
+  async getLeadById(leadId: string, agencyId: string, userId: string) {
     try {
+      await this.agencyService.agencyAccessControl(agencyId, userId);
+
       const lead = await this.prisma.lead.findUnique({
         where: { id: leadId },
         include: {
@@ -147,8 +153,6 @@ export class LeadsService {
         throw new HttpError('Lead introuvable', HttpStatus.NOT_FOUND, 'LEAD_NOT_FOUND');
       }
 
-      //await this.checkAgencyAccess(lead.agencyId, userId, userRole);
-
       return lead;
     } catch (error) {
       if (error instanceof HttpError) throw error;
@@ -163,14 +167,13 @@ export class LeadsService {
   // CHANGER LE STATUT D'UN LEAD (pipeline CRM)
   // Accessible : Owner + Staff actif de l'agence
   // ─────────────────────────────────────────────────────────────────
-  async updateLeadStatus(leadId: string, dto: UpdateLeadStatusDto, userId: string, userRole: Role) {
+  async updateLeadStatus(dto: UpdateLeadStatusDto) {
     try {
-      const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
+      await this.agencyService.agencyAccessControl(dto.leadId, dto.userId);
+      const lead = await this.prisma.lead.findUnique({ where: { id: dto.leadId } });
       if (!lead) {
         throw new HttpError('Lead introuvable', HttpStatus.NOT_FOUND, 'LEAD_NOT_FOUND');
       }
-
-      // await this.checkAgencyAccess(lead.agencyId, userId, userRole);
 
       const isConverted = (status: LeadStatus) => status === LeadStatus.CONVERTED;
 
@@ -182,14 +185,17 @@ export class LeadsService {
         );
       }
 
-      return this.prisma.lead.update({
-        where: { id: leadId },
+      await this.prisma.lead.update({
+        where: { id: dto.leadId },
         data: { status: dto.status },
         include: {
           property: { select: { title: true } },
           assignedTo: { select: { user: { select: { name: true } } } },
         },
       });
+      return {
+        message: 'Demande mise a jour avec succes',
+      };
     } catch (error) {
       if (error instanceof HttpError) throw error;
       console.error('Erreur updateLeadStatus:', error);
@@ -203,9 +209,9 @@ export class LeadsService {
   // ASSIGNER UN AGENT AU LEAD
   // Accessible : Owner + AGENCY_ADMIN uniquement
   // ─────────────────────────────────────────────────────────────────
-  async assignLead(leadId: string, dto: AssignLeadDto) {
+  async assignLead(dto: AssignLeadDto) {
     try {
-      const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
+      const lead = await this.prisma.lead.findUnique({ where: { id: dto.leadId } });
       if (!lead) {
         throw new HttpError('Lead introuvable', HttpStatus.NOT_FOUND, 'LEAD_NOT_FOUND');
       }
@@ -222,7 +228,7 @@ export class LeadsService {
       }
 
       return this.prisma.lead.update({
-        where: { id: leadId },
+        where: { id: dto.leadId },
         data: { assignedToId: dto.staffId },
         include: {
           assignedTo: {
@@ -242,8 +248,9 @@ export class LeadsService {
   // ─────────────────────────────────────────────────────────────────
   // SUPPRIMER UN LEAD
   // Accessible : Owner + AGENCY_ADMIN uniquement
-  async deleteLead(leadId: string, userId: string, userRole: Role) {
+  async deleteLead(leadId: string, userId: string, agencyId: string) {
     try {
+      await this.agencyService.agencyAccessControl(agencyId, userId);
       const lead = await this.prisma.lead.findUnique({ where: { id: leadId } });
       if (!lead) {
         throw new HttpError('Lead introuvable', HttpStatus.NOT_FOUND, 'LEAD_NOT_FOUND');
@@ -256,8 +263,6 @@ export class LeadsService {
           'LEAD_ALREADY_CONVERTED',
         );
       }
-      await this.checkAgencyAccess(lead.agencyId, userId, userRole);
-      await this.checkAdminAccess(lead.agencyId, userId, userRole);
 
       await this.prisma.lead.delete({ where: { id: leadId } });
 
@@ -327,55 +332,4 @@ export class LeadsService {
     }
   }
     */
-
-  // ─────────────────────────────────────────────────────────────────
-  // MÉTHODES PRIVÉES UTILITAIRES
-  // ─────────────────────────────────────────────────────────────────
-
-  // Vérifie que l'utilisateur appartient à l'agence (Owner ou Staff actif)
-  private async checkAgencyAccess(agencyId: string, userId: string, userRole: Role) {
-    if (userRole === Role.SUPER_ADMIN) return;
-
-    if (userRole === Role.OWNER) {
-      const owner = await this.prisma.owner.findUnique({
-        where: { userId },
-        include: { agency: true },
-      });
-      if (!owner || owner.agency?.id !== agencyId) {
-        throw new HttpError(
-          'Accès refusé à cette agence',
-          HttpStatus.FORBIDDEN,
-          'AGENCY_ACCESS_DENIED',
-        );
-      }
-      return;
-    }
-
-    const staff = await this.prisma.staff.findFirst({
-      where: { userId, agencyId, isActive: true },
-    });
-    if (!staff) {
-      throw new HttpError(
-        'Accès refusé à cette agence',
-        HttpStatus.FORBIDDEN,
-        'AGENCY_ACCESS_DENIED',
-      );
-    }
-  }
-
-  // Vérifie que l'utilisateur est Owner ou AGENCY_ADMIN
-  private async checkAdminAccess(agencyId: string, userId: string, userRole: Role) {
-    if (userRole === Role.OWNER || userRole === Role.SUPER_ADMIN) return;
-
-    const staff = await this.prisma.staff.findFirst({
-      where: { userId, agencyId, isActive: true, agencyRole: AgencyRole.AGENCY_ADMIN },
-    });
-    if (!staff) {
-      throw new HttpError(
-        'Seul un Owner ou Admin agence peut effectuer cette action',
-        HttpStatus.FORBIDDEN,
-        'ADMIN_ACCESS_REQUIRED',
-      );
-    }
-  }
 }

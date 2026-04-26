@@ -14,13 +14,7 @@ export class PropertyService {
   ) {}
 
   async getAllPropertyByAgency(query: PropertyFilterDto) {
-    if (!query.agencyId) {
-      throw new HttpError(
-        "L'identifiant de l'agence est requis",
-        HttpStatus.BAD_REQUEST,
-        'AGENCY_ID_REQUIRED',
-      );
-    }
+    await this.agencyService.agencyAccessControl(query?.agencyId, query?.userId);
 
     const pageInitial = convertToInteger(query?.initialPage) || 1;
     const limitPage = convertToInteger(query?.limitPerPage) || 10;
@@ -80,8 +74,8 @@ export class PropertyService {
     });
   }
 
-  async createProperty(ownerId: string, data: propertyDto): Promise<{ message: string }> {
-    await this.agencyService.checkAgencyOwnership(data.agencyId);
+  async createProperty(data: propertyDto): Promise<{ message: string }> {
+    await this.agencyService.agencyAccessControl(data.agencyId, data?.userId);
 
     const uniqueName = await this.prisma.property.findUnique({
       where: {
@@ -131,8 +125,12 @@ export class PropertyService {
       }
     }
 
+    const { userId, ...values } = data;
+
     await this.prisma.property.create({
-      data,
+      data: {
+        ...values,
+      },
     });
 
     return {
@@ -140,11 +138,9 @@ export class PropertyService {
     };
   }
 
-  async updateProperty(
-    ownerId: string,
-    propertyId: string,
-    data: propertyDto,
-  ): Promise<{ message: string }> {
+  async updateProperty(propertyId: string, data: propertyDto): Promise<{ message: string }> {
+    await this.agencyService.agencyAccessControl(data.agencyId, data.userId);
+
     const property = await this.prisma.property.findUnique({
       where: { id: propertyId },
     });
@@ -152,8 +148,6 @@ export class PropertyService {
     if (!property) {
       throw new HttpError('Propriété introuvable', HttpStatus.NOT_FOUND, 'PROPERTY_NOT_FOUND');
     }
-
-    await this.agencyService.checkAgencyOwnership(property.agencyId);
 
     // 🧠 Cas où on change le bâtiment
     if (data.batimentId) {
@@ -209,7 +203,7 @@ export class PropertyService {
       }
     }
 
-    const { agencyId, batimentId, ...safeValues } = data;
+    const { agencyId, userId, batimentId, ...safeValues } = data;
 
     await this.prisma.property.update({
       where: { id: propertyId },
@@ -237,8 +231,8 @@ export class PropertyService {
     };
   }
 
-  async getOccupationRateByType1(ownerId: string, agencyId: string) {
-    await this.agencyService.checkAgencyOwnership(agencyId);
+  async getOccupationRateByType1(userId: string, agencyId: string) {
+    await this.agencyService.agencyAccessControl(agencyId, userId);
 
     const properties = await this.prisma.property.findMany({
       where: {
@@ -280,8 +274,8 @@ export class PropertyService {
   /**
    * Stats: Taux d'occupation par type de propriété
    */
-  async getOccupationRateByType(ownerId: string, agencyId: string) {
-    await this.agencyService.checkAgencyOwnership(agencyId);
+  async getOccupationRateByType(userId: string, agencyId: string) {
+    await this.agencyService.agencyAccessControl(agencyId, userId);
 
     const properties = await this.prisma.property.findMany({
       where: { agencyId },
@@ -309,7 +303,7 @@ export class PropertyService {
   //  * Stats: Revenus mensuels par maison occupée (fake API pour dev)
   //  */
   // async getMonthlyRevenue(ownerId: string, agencyId: string) {
-  //   await this.agencyService.checkAgencyOwnership(ownerId, agencyId);
+  //   await this.agencyService.agencyAccessControl(ownerId, agencyId);
   //
   //   const properties = await this.prisma.property.findMany({
   //     where: {

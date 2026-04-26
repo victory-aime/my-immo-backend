@@ -59,10 +59,8 @@ export class PropertyController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async createProperty(@Body() data: propertyDto, @Query('ownerId') ownerId: string) {
-    return this.propertyService.createProperty(ownerId, {
-      ...data,
-    });
+  async createProperty(@Body() data: propertyDto) {
+    return this.propertyService.createProperty(data);
   }
 
   @Post(API_URL.PROPERTY.UPDATE_PROPERTY)
@@ -78,10 +76,9 @@ export class PropertyController {
   })
   async updateProperty(
     @Body() data: propertyDto,
-    @Query('ownerId') ownerId: string,
     @Query('appartId') appartId: string,
   ) {
-    return this.propertyService.updateProperty(ownerId, appartId, {
+    return this.propertyService.updateProperty(appartId, {
       ...data,
     });
   }

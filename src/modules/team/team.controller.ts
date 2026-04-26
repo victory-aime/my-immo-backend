@@ -12,8 +12,8 @@ export class TeamController {
 
   @Get(API_URL.TEAM.AGENCY_TEAM_LIST)
   @AuthorizeRoles(Role.OWNER)
-  async getAllTeamsByAgency(@Query('agencyId') agencyId: string) {
-    return this.teamService.getTeamListByAgencyId(agencyId);
+  async getAllTeamsByAgency(@Query('agencyId') agencyId: string, @Query('userId') userId: string) {
+    return this.teamService.getTeamListByAgencyId(agencyId, userId);
   }
 
   @Post(API_URL.TEAM.CHANGE_STATUS)
