@@ -32,14 +32,8 @@ export class AgencyService {
   // HELPERS PRIVÉS
   // ─────────────────────────────────────────
 
-  async findAgency(agencyId: string) {
-    if (!agencyId) {
-      throw new HttpError(
-        'Certains informations sont manquantes',
-        HttpStatus.BAD_REQUEST,
-        'BAD_REQUEST',
-      );
-    }
+  async findAgency(agencyId: string, userId: string) {
+    await this.agencyAccessControl(agencyId, userId);
     const agency = await this.prismaService.agency.findUnique({
       where: { id: agencyId },
     });
@@ -272,7 +266,7 @@ export class AgencyService {
 
   async updateAgency(data: updateAgencyDto): Promise<{ message: string }> {
     try {
-      const agency = await this.findAgency(data.agencyId);
+      const agency = await this.findAgency(data.agencyId, data?.userId);
       await this.prismaService.agency.update({
         where: { id: agency.id },
         data: {
@@ -299,7 +293,7 @@ export class AgencyService {
 
   async changePlan(agencyId: string, newPlan: Plan): Promise<{ message: string }> {
     try {
-      await this.findAgency(agencyId);
+      //await this.findAgency(agencyId),;
       const plan = await this.resolveActivePlan(newPlan);
 
       // @@unique([agencyId]) sur Subscription → on update directement
@@ -325,11 +319,11 @@ export class AgencyService {
   // FERMETURE
   // ─────────────────────────────────────────
 
-  async closeAgency(data: { agencyId: string; ownerId: string }) {
-    const agency = await this.findAgency(data.agencyId);
+  async closeAgency(data: { agencyId: string; userId: string }) {
+    const agency = await this.findAgency(data.agencyId, data.userId);
 
     const owner = await this.prismaService.owner.findUnique({
-      where: { id: data.ownerId },
+      where: { id: data.userId },
     });
     if (!owner) {
       throw new BadRequestException('Owner introuvable.');
@@ -363,8 +357,35 @@ export class AgencyService {
     return !agency;
   }
 
-  async checkAgencyOwnership(agencyId: string) {
-    const agency = await this.findAgency(agencyId);
-    return agency.id;
+  async agencyAccessControl(agencyId: string, userId: string) {
+    if (!userId || !agencyId) {
+      throw new HttpError(
+        'Accès refusé à cette agence',
+        HttpStatus.FORBIDDEN,
+        'AGENCY_ACCESS_DENIED',
+      );
+    }
+
+    const [owner, staff] = await Promise.all([
+      this.prismaService.owner.findUnique({
+        where: { id: userId },
+        select: { agency: true },
+      }),
+      this.prismaService.staff.findFirst({
+        where: { id: userId, agencyId, isActive: true },
+        select: { id: true },
+      }),
+    ]);
+
+    const isOwner = owner?.agency?.id === agencyId;
+    const isStaff = !!staff;
+
+    if (!isOwner && !isStaff) {
+      throw new HttpError(
+        'Accès refusé à cette agence',
+        HttpStatus.FORBIDDEN,
+        'AGENCY_ACCESS_DENIED',
+      );
+    }
   }
 }

@@ -19,6 +19,9 @@ export class propertyDto {
   @IsString()
   agencyId: string;
 
+  @IsString()
+  userId: string;
+
   @IsOptional()
   batimentId?: string;
 

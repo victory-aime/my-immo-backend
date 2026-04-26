@@ -18,6 +18,7 @@ export class CreateBuildingDto {
   })
   documents: string[];
   agencyId: string;
+  userId: string;
   landId?: string;
 }
 

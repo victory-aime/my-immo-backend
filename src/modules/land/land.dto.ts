@@ -15,12 +15,12 @@ export class LandDto {
 }
 
 export class CreateLandDto extends LandDto {
-  ownerId: string;
+  userId: string;
 }
 
 export class UpdateLandDto extends LandDto {
   id: string;
-  ownerId: string;
+  userId: string;
 }
 
 export class LandResponseDto extends LandDto {

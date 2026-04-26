@@ -2,6 +2,7 @@ import { AgencyRole } from '../../../prisma/generated/enums';
 
 export class CreateInvitationDto {
   adminId: string;
+  userId: string;
   agencyId: string;
   payload: {
     name: string;

@@ -10,8 +10,9 @@ export class TeamService {
     private readonly agencyService: AgencyService,
   ) {}
 
-  async getTeamListByAgencyId(agencyId: string) {
-    const agency = await this.agencyService.findAgency(agencyId);
+  async getTeamListByAgencyId(agencyId: string, userId: string) {
+    await this.agencyService.agencyAccessControl(agencyId, userId);
+    const agency = await this.agencyService.findAgency(agencyId, userId);
 
     if (!agency) {
       throw new HttpError('Not found');

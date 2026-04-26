@@ -7,15 +7,13 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { API_URL } from '_root/config/api';
 import { LeadsService } from './leads.service';
-import { AssignLeadDto, ConvertToTenantDto, CreateLeadDto, UpdateLeadStatusDto } from './leads.dto';
-import { Role } from '../../../prisma/generated/enums';
+import { AssignLeadDto, CreateLeadDto, UpdateLeadStatusDto } from './leads.dto';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
 @ApiTags('Leads')
 @ApiBearerAuth()
-@AllowAnonymous() // ⚠️ TEMPORAIRE — à retirer quand le guard sera réglé
 @Controller()
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
@@ -24,14 +22,12 @@ export class LeadsController {
   // POST v1/secure/leads/create
   // ─────────────────────────────────────────────────────────────────
   @Post(API_URL.LEADS.CREATE)
+  @AllowAnonymous()
   @ApiOperation({ summary: 'Créer une demande de contact (client connecté)' })
   @ApiBody({ type: CreateLeadDto })
   @ApiOkResponse({ description: 'Demande de contact créée avec succès' })
   @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
-  async createLead(
-    @Body() dto: CreateLeadDto,
-    @Query('userId') userId: string, // ⚠️ TEMPORAIRE
-  ) {
+  async createLead(@Body() dto: CreateLeadDto, @Query('userId') userId: string) {
     return this.leadsService.createLead(dto, userId);
   }
 
@@ -42,9 +38,7 @@ export class LeadsController {
   @ApiOperation({ summary: 'Voir mes demandes de contact (client connecté)' })
   @ApiOkResponse({ description: 'Liste de mes leads récupérée avec succès' })
   @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
-  async getMyLeads(
-    @Query('userId') userId: string, // ⚠️ TEMPORAIRE
-  ) {
+  async getMyLeads(@Query('userId') userId: string) {
     return this.leadsService.getMyLeads(userId);
   }
 
@@ -55,12 +49,8 @@ export class LeadsController {
   @ApiOperation({ summary: "Lister les leads d'une agence (Owner + Staff)" })
   @ApiOkResponse({ description: 'Liste des leads récupérée avec succès' })
   @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
-  async getLeadsByAgency(
-    @Query('agencyId') agencyId: string,
-    @Query('userId') userId: string, // ⚠️ TEMPORAIRE
-    @Query('userRole') userRole: string, // ⚠️ TEMPORAIRE
-  ) {
-    return this.leadsService.getLeadsByAgency(agencyId, userId, userRole as Role);
+  async getLeadsByAgency(@Query('agencyId') agencyId: string, @Query('userId') userId: string) {
+    return this.leadsService.getLeadsByAgency(agencyId, userId);
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -72,10 +62,10 @@ export class LeadsController {
   @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
   async getLeadById(
     @Query('leadId') leadId: string,
-    @Query('userId') userId: string, // ⚠️ TEMPORAIRE
-    @Query('userRole') userRole: string, // ⚠️ TEMPORAIRE
+    @Query('userId') userId: string,
+    @Query('agencyId') agencyId: string,
   ) {
-    return this.leadsService.getLeadById(leadId, userId, userRole as Role);
+    return this.leadsService.getLeadById(leadId, agencyId, userId);
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -86,13 +76,8 @@ export class LeadsController {
   @ApiBody({ type: UpdateLeadStatusDto })
   @ApiOkResponse({ description: 'Statut mis à jour avec succès' })
   @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
-  async updateLeadStatus(
-    @Query('leadId') leadId: string,
-    @Body() dto: UpdateLeadStatusDto,
-    @Query('userId') userId: string, // ⚠️ TEMPORAIRE
-    @Query('userRole') userRole: string, // ⚠️ TEMPORAIRE
-  ) {
-    return this.leadsService.updateLeadStatus(leadId, dto, userId, userRole as Role);
+  async updateLeadStatus(@Body() dto: UpdateLeadStatusDto) {
+    return this.leadsService.updateLeadStatus(dto);
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -103,27 +88,9 @@ export class LeadsController {
   @ApiBody({ type: AssignLeadDto })
   @ApiOkResponse({ description: 'Agent assigné avec succès' })
   @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
-  async assignLead(@Query('leadId') leadId: string, @Body() dto: AssignLeadDto) {
-    return this.leadsService.assignLead(leadId, dto);
+  async assignLead(@Body() dto: AssignLeadDto) {
+    return this.leadsService.assignLead(dto);
   }
-
-  // ─────────────────────────────────────────────────────────────────
-  // POST v1/secure/leads/convert-tenant?leadId=xxx
-  // ─────────────────────────────────────────────────────────────────
-  @Post(API_URL.LEADS.CONVERT_TENANT)
-  @ApiOperation({ summary: 'Convertir un lead en locataire (Owner + Admin agence)' })
-  @ApiBody({ type: ConvertToTenantDto })
-  @ApiOkResponse({ description: 'Lead converti en locataire avec succès' })
-  @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
-  /* async convertToTenant(
-    @Query('leadId') leadId: string,
-    @Body() dto: ConvertToTenantDto,
-    @Query('userId') userId: string, // ⚠️ TEMPORAIRE
-    @Query('userRole') userRole: string, // ⚠️ TEMPORAIRE
-  ) {
-    return this.leadsService.convertToTenant(leadId, dto, userId, userRole as Role);
-  }
-     */
 
   // ─────────────────────────────────────────────────────────────────
   // DELETE v1/secure/leads/delete?leadId=xxx
@@ -134,9 +101,9 @@ export class LeadsController {
   @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
   async deleteLead(
     @Query('leadId') leadId: string,
-    @Query('userId') userId: string, // ⚠️ TEMPORAIRE
-    @Query('userRole') userRole: string, // ⚠️ TEMPORAIRE
+    @Query('userId') userId: string,
+    @Query('agencyId') agencyId: string,
   ) {
-    return this.leadsService.deleteLead(leadId, userId, userRole as Role);
+    return this.leadsService.deleteLead(leadId, userId, agencyId);
   }
 }

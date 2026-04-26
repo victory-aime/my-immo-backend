@@ -6,15 +6,18 @@ import { ResendService } from '_root/modules/mail/resend.service';
 import { EXPIRE_TIME } from '_root/config/enum';
 import { CreateInvitationDto } from '_root/modules/invitations/invitation.dto';
 import { HttpError } from '_root/config/http.error';
+import { AgencyService } from '../agency/agency.service';
 
 @Injectable()
 export class InvitationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly resendService: ResendService,
+    private readonly agencyService: AgencyService,
   ) {}
 
-  async getAllInviteByAgencyId(agencyId: string) {
+  async getAllInviteByAgencyId(agencyId: string, userId: string) {
+    await this.agencyService.agencyAccessControl(agencyId, userId);
     return this.prisma.invitation.findMany({
       where: {
         agencyId,
@@ -25,7 +28,8 @@ export class InvitationService {
     });
   }
 
-  async createInvitation({ adminId, agencyId, payload }: CreateInvitationDto) {
+  async createInvitation({ adminId, userId, agencyId, payload }: CreateInvitationDto) {
+    await this.agencyService.agencyAccessControl(agencyId, userId);
     const agency = await this.prisma.agency.findUniqueOrThrow({
       where: { id: agencyId },
     });
@@ -195,7 +199,8 @@ export class InvitationService {
     });
   }
 
-  async cancelledInvitation(id: string) {
+  async cancelledInvitation(id: string, agencyId: string, userId: string) {
+    await this.agencyService.agencyAccessControl(agencyId, userId);
     await this.prisma.invitation.update({
       where: { id },
       data: {

@@ -30,8 +30,8 @@ export class AgencyController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async agencyInfo(@Query('agencyId') agencyId: string) {
-    return this.agencyService.findAgency(agencyId);
+  async agencyInfo(@Query('agencyId') agencyId: string, @Query('userId') userId: string) {
+    return this.agencyService.findAgency(agencyId, userId);
   }
 
   @Get(API_URL.AGENCY.AGENCY_SUBSCRIPTION_INFO)
@@ -122,8 +122,8 @@ export class AgencyController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async closeAgency(@Query('agencyId') agencyId: string, @Query('ownerId') ownerId: string) {
-    return this.agencyService.closeAgency({ agencyId, ownerId });
+  async closeAgency(@Query('agencyId') agencyId: string, @Query('userId') userId: string) {
+    return this.agencyService.closeAgency({ agencyId, userId });
   }
 
   @AllowAnonymous()
