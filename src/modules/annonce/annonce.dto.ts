@@ -6,6 +6,7 @@ export class CreateAnnonceDto {
   description: string;
   galleryImages: string[];
   agencyId?: string;
+  userId?: string;
   status?: AnnonceStatus;
 }
 

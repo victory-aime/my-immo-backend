@@ -37,7 +37,6 @@ export class BuildingController {
   @Post(API_URL.BUILDING.CREATE_BUILDING)
   async createBuilding(
     @Body('data') rawData: string,
-    @Query('ownerId') ownerId: string,
     @UploadedFiles()
     files: {
       documents?: Express.Multer.File[];
@@ -45,7 +44,7 @@ export class BuildingController {
   ) {
     const data: CreateBuildingDto = JSON.parse(rawData);
     let cloudinaryDocumentsFilesUrl: string[] = [];
-    const getAgencyName = await this.agencyService.findAgency(data?.agencyId);
+    const getAgencyName = await this.agencyService.findAgency(data?.agencyId, data?.userId);
     if (files?.documents?.length) {
       const uploads = await Promise.all(
         files.documents.map((document) =>
@@ -58,13 +57,10 @@ export class BuildingController {
       );
       cloudinaryDocumentsFilesUrl = uploads.map((file) => file.secure_url);
     }
-    return this.buildingService.createBuilding(
-      {
-        ...data,
-        documents: cloudinaryDocumentsFilesUrl,
-      },
-      ownerId,
-    );
+    return this.buildingService.createBuilding({
+      ...data,
+      documents: cloudinaryDocumentsFilesUrl,
+    });
   }
 
   @Post(API_URL.BUILDING.UPDATE)
@@ -80,7 +76,7 @@ export class BuildingController {
     const data: UpdateBuildingDto = JSON.parse(rawData);
 
     let cloudinaryDocumentsFilesUrl: string[] = [];
-    const getAgencyName = await this.agencyService.findAgency(data?.agencyId);
+    const getAgencyName = await this.agencyService.findAgency(data?.agencyId, data?.userId);
     if (files?.documents?.length) {
       const uploads = await Promise.all(
         files.documents.map((document) =>
@@ -94,18 +90,15 @@ export class BuildingController {
       cloudinaryDocumentsFilesUrl = uploads.map((file) => file.secure_url);
     }
 
-    return this.buildingService.updateBuilding(
-      { ...data, documents: cloudinaryDocumentsFilesUrl },
-      ownerId,
-    );
+    return this.buildingService.updateBuilding({ ...data, documents: cloudinaryDocumentsFilesUrl });
   }
 
   @Delete(API_URL.BUILDING.DELETE)
   async deleteBuilding(
-    @Query('ownerId') ownerId: string,
+    @Query('userId') userId: string,
     @Query('id') id: string,
     @Query('agencyId') agencyId: string,
   ) {
-    return this.buildingService.deleteBuilding(id, agencyId);
+    return this.buildingService.deleteBuilding(id, agencyId, userId);
   }
 }

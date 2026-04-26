@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { InvitationService } from '_root/modules/invitations/invitation.service';
-import { AgencyRole, Role } from '../../../prisma/generated/enums';
+import { Role } from '../../../prisma/generated/enums';
 import { AuthorizeRoles, MiddlewareGuard } from '_root/guard/middleware.guard';
 import { AllowAnonymous, AuthGuard } from '@thallesp/nestjs-better-auth';
 import { API_URL } from '_root/config/api';
@@ -12,8 +12,8 @@ export class InvitationController {
   constructor(private readonly invitationService: InvitationService) {}
 
   @Get(API_URL.INVITATION.AGENCY_INVITE_LIST)
-  async AllAgencyInviteList(@Query('agencyId') agencyId: string) {
-    return this.invitationService.getAllInviteByAgencyId(agencyId);
+  async AllAgencyInviteList(@Query('agencyId') agencyId: string, @Query('userId') userId: string) {
+    return this.invitationService.getAllInviteByAgencyId(agencyId, userId);
   }
 
   @Post(API_URL.INVITATION.CREATE_INVITE)
@@ -33,7 +33,11 @@ export class InvitationController {
 
   @Post(API_URL.INVITATION.CANCEL_INVITE)
   @AuthorizeRoles(Role.OWNER, Role.AGENCY_ADMIN)
-  async cancelInvitation(@Query('inviteId') inviteId: string) {
-    return this.invitationService.cancelledInvitation(inviteId);
+  async cancelInvitation(
+    @Query('inviteId') inviteId: string,
+    @Query('agencyId') agencyId: string,
+    @Query('userId') userId: string,
+  ) {
+    return this.invitationService.cancelledInvitation(inviteId, agencyId, userId);
   }
 }

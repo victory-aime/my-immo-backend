@@ -59,7 +59,7 @@ export class AnnonceController {
     let cloudinaryImagesUrls: string[] = [];
 
     if (files?.galleryImages?.length) {
-      const agency = await this.agencyService.findAgency(data?.agencyId!);
+      const agency = await this.agencyService.findAgency(data?.agencyId!, data?.userId!);
       const uploads = await Promise.all(
         files.galleryImages.map((file) =>
           this.uploadFileService.uploadFiles(
@@ -90,8 +90,8 @@ export class AnnonceController {
   // 3. LISTE PAR AGENCE
   @Get(API_URL.ANNONCE.FIND_BY_AGENCY)
   @ApiOperation({ summary: 'Récupérer les annonces d’une agence spécifique' })
-  async findByAgency(@Query('agencyId') agencyId: string) {
-    return this.annonceService.findAnnoncesByAgency(agencyId);
+  async findByAgency(@Query('agencyId') agencyId: string, @Query('userId') userId: string) {
+    return this.annonceService.findAnnoncesByAgency(agencyId, userId);
   }
 
   // 4. MODIFIER
@@ -108,7 +108,7 @@ export class AnnonceController {
     let cloudinaryImagesUrls: string[] = [];
 
     if (files?.galleryImages?.length) {
-      const agency = await this.agencyService.findAgency(data?.agencyId!);
+      const agency = await this.agencyService.findAgency(data?.agencyId!, data?.userId!);
       const uploads = await Promise.all(
         files.galleryImages.map((file) =>
           this.uploadFileService.uploadFiles(
