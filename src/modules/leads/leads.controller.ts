@@ -15,7 +15,7 @@ import { Role } from '../../../prisma/generated/enums';
 
 @ApiTags('Leads')
 @ApiBearerAuth()
-@AllowAnonymous() // ⚠️ TEMPORAIRE — à retirer quand le guard sera réglé
+@AllowAnonymous() // TEMPORAIRE
 @Controller()
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}

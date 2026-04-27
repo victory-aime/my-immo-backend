@@ -17,6 +17,7 @@ enum APIS_URL_GLOBAL_PATH {
   TEAM = 'team',
   ANNONCES = 'annonces',
   LEADS = 'leads',
+  VISITS = 'visits',
 }
 
 enum CLOUDINARY_FOLDER_NAME {
