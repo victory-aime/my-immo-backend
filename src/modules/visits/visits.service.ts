@@ -1,17 +1,21 @@
 import { HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { AssignAgentDto, CreateVisitDto, UpdateVisitStatusDto } from './visits.dto';
-import { VisitStatus } from '../../../prisma/generated/enums';
+import { NotificationType, VisitStatus } from '../../../prisma/generated/enums';
 import { HttpError } from '_root/config/http.error';
+import { Notifications2Service } from '_root/modules/notifications2/notifications2.service';
 
 @Injectable()
 export class VisitsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: Notifications2Service, // ✅ injecté
+  ) {}
 
-  // CRÉER UNE VISITE
+  // CREER UNE VISITE
   async createVisit(dto: CreateVisitDto, agencyId: string) {
     try {
-      // 1. Vérifier que le lead existe
+      // 1. Verifier que le lead existe
       const lead = await this.prisma.lead.findUnique({
         where: { id: dto.leadId },
         include: { client: { include: { user: true } } },
@@ -20,7 +24,7 @@ export class VisitsService {
         throw new HttpError('Lead introuvable', HttpStatus.NOT_FOUND, 'LEAD_NOT_FOUND');
       }
 
-      // 2. Vérifier que le bien existe
+      // 2. Verifier que le bien existe
       const property = await this.prisma.property.findUnique({
         where: { id: dto.propertyId },
       });
@@ -28,7 +32,7 @@ export class VisitsService {
         throw new HttpError('Bien introuvable', HttpStatus.NOT_FOUND, 'PROPERTY_NOT_FOUND');
       }
 
-      // 3. Vérifier que l'agent existe si fourni
+      // 3. Verifier que l'agent existe si fourni
       if (dto.agentId) {
         const agent = await this.prisma.staff.findFirst({
           where: { id: dto.agentId, agencyId, isActive: true },
@@ -38,7 +42,7 @@ export class VisitsService {
         }
       }
 
-      // 4. Créer la visite
+      // 4. Creer la visite
       await this.prisma.visit.create({
         data: {
           scheduledAt: new Date(dto.scheduledAt),
@@ -51,17 +55,28 @@ export class VisitsService {
         },
       });
 
-      // 🔔 TODO : notifier le client une fois le module notifications prêt
+      // 🔔 Notifier le client que sa visite a ete planifiee
+      const clientUserId = lead.client?.user?.id;
+      if (clientUserId) {
+        await this.notificationsService.sendNotification({
+          type: NotificationType.VISIT,
+          recipientId: clientUserId,
+          title: 'Visite planifiee',
+          content: `Votre visite pour le bien "${property.title}" a ete planifiee le ${new Date(dto.scheduledAt).toLocaleDateString('fr-FR')}.`,
+          agencyId,
+        });
+      }
 
-      return { message: 'Visite planifiée avec succès' };
+      return { message: 'Visite planifiee avec succes' };
     } catch (error) {
       if (error instanceof HttpError) throw error;
       console.error('Erreur createVisit:', error);
       throw new InternalServerErrorException(
-        'Une erreur interne est survenue. Veuillez réessayer plus tard.',
+        'Une erreur interne est survenue. Veuillez reessayer plus tard.',
       );
     }
   }
+
   // LISTER LES VISITES D'UNE AGENCE
   async getVisitsByAgency(agencyId: string) {
     try {
@@ -79,9 +94,8 @@ export class VisitsService {
         orderBy: { scheduledAt: 'asc' },
       });
 
-      //  Vérifier si l'agence a des visites
       if (visits.length === 0) {
-        return { message: 'Aucune visite trouvée pour cette agence.' };
+        return { message: 'Aucune visite trouvee pour cette agence.' };
       }
 
       return visits;
@@ -89,12 +103,12 @@ export class VisitsService {
       if (error instanceof HttpError) throw error;
       console.error('Erreur getVisitsByAgency:', error);
       throw new InternalServerErrorException(
-        'Une erreur interne est survenue. Veuillez réessayer plus tard.',
+        'Une erreur interne est survenue. Veuillez reessayer plus tard.',
       );
     }
   }
 
-  // DÉTAIL D'UNE VISITE
+  // DETAIL D'UNE VISITE
   async getVisitById(visitId: string) {
     try {
       const visit = await this.prisma.visit.findUnique({
@@ -119,10 +133,11 @@ export class VisitsService {
       if (error instanceof HttpError) throw error;
       console.error('Erreur getVisitById:', error);
       throw new InternalServerErrorException(
-        'Une erreur interne est survenue. Veuillez réessayer plus tard.',
+        'Une erreur interne est survenue. Veuillez reessayer plus tard.',
       );
     }
   }
+
   // MES VISITES (CLIENT)
   async getMyVisits(userId: string) {
     try {
@@ -140,9 +155,8 @@ export class VisitsService {
         orderBy: { scheduledAt: 'asc' },
       });
 
-      //  Vérifier si le client a des visites
       if (visits.length === 0) {
-        return { message: "Vous n'avez aucune visite planifiée pour le moment." };
+        return { message: "Vous n'avez aucune visite planifiee pour le moment." };
       }
 
       return visits;
@@ -150,11 +164,12 @@ export class VisitsService {
       if (error instanceof HttpError) throw error;
       console.error('Erreur getMyVisits:', error);
       throw new InternalServerErrorException(
-        'Une erreur interne est survenue. Veuillez réessayer plus tard.',
+        'Une erreur interne est survenue. Veuillez reessayer plus tard.',
       );
     }
   }
-  // MES VISITES (CLIENT)
+
+  // METTRE A JOUR LE STATUT D'UNE VISITE
   async updateVisitStatus(visitId: string, dto: UpdateVisitStatusDto) {
     try {
       const visit = await this.prisma.visit.findUnique({
@@ -170,7 +185,7 @@ export class VisitsService {
       }
 
       if (visit.status === dto.status) {
-        return { message: 'La visite a déjà ce statut.' };
+        return { message: 'La visite a deja ce statut.' };
       }
 
       await this.prisma.visit.update({
@@ -178,18 +193,36 @@ export class VisitsService {
         data: { status: dto.status },
       });
 
-      // 🔔 TODO : notifier le client du changement de statut une fois le module notifications prêt
+      // 🔔 Notifier le client du changement de statut
+      const clientUserId = visit.lead?.client?.user?.id;
+      if (clientUserId) {
+        const statusLabels: Record<VisitStatus, string> = {
+          [VisitStatus.PLANNED]: 'planifiee',
+          [VisitStatus.CONFIRMED]: 'confirmee',
+          [VisitStatus.DONE]: 'effectuee',
+          [VisitStatus.CANCELLED]: 'annulee',
+        };
 
-      return { message: 'Statut mis à jour avec succès' };
+        await this.notificationsService.sendNotification({
+          type: NotificationType.VISIT,
+          recipientId: clientUserId,
+          title: 'Mise a jour de votre visite',
+          content: `Votre visite pour le bien "${visit.property?.title}" est desormais ${statusLabels[dto.status]}.`,
+          agencyId: visit.agencyId,
+        });
+      }
+
+      return { message: 'Statut mis a jour avec succes' };
     } catch (error) {
       if (error instanceof HttpError) throw error;
       console.error('Erreur updateVisitStatus:', error);
       throw new InternalServerErrorException(
-        'Une erreur interne est survenue. Veuillez réessayer plus tard.',
+        'Une erreur interne est survenue. Veuillez reessayer plus tard.',
       );
     }
   }
-  // ASSIGNER UN AGENT À UNE VISITE
+
+  // ASSIGNER UN AGENT A UNE VISITE
   async assignAgent(visitId: string, dto: AssignAgentDto) {
     try {
       const visit = await this.prisma.visit.findUnique({ where: { id: visitId } });
@@ -197,9 +230,8 @@ export class VisitsService {
         throw new HttpError('Visite introuvable', HttpStatus.NOT_FOUND, 'VISIT_NOT_FOUND');
       }
 
-      //  Vérifier si l'agent est déjà assigné à cette visite
       if (visit.agentId === dto.agentId) {
-        return { message: 'Cet agent est déjà assigné à cette visite.' };
+        return { message: 'Cet agent est deja assigne a cette visite.' };
       }
 
       const agent = await this.prisma.staff.findFirst({
@@ -215,14 +247,21 @@ export class VisitsService {
         data: { agentId: dto.agentId },
       });
 
-      // 🔔 TODO : notifier l'agent une fois le module notifications prêt
+      // 🔔 Notifier l'agent qu'une visite lui a ete assignee
+      await this.notificationsService.sendNotification({
+        type: NotificationType.VISIT,
+        recipientId: agent.user.id,
+        title: 'Nouvelle visite assignee',
+        content: `Une visite vous a ete assignee le ${new Date(visit.scheduledAt).toLocaleDateString('fr-FR')}.`,
+        agencyId: visit.agencyId,
+      });
 
-      return { message: 'Agent assigné avec succès' };
+      return { message: 'Agent assigne avec succes' };
     } catch (error) {
       if (error instanceof HttpError) throw error;
       console.error('Erreur assignAgent:', error);
       throw new InternalServerErrorException(
-        'Une erreur interne est survenue. Veuillez réessayer plus tard.',
+        'Une erreur interne est survenue. Veuillez reessayer plus tard.',
       );
     }
   }
@@ -237,7 +276,7 @@ export class VisitsService {
 
       if (visit.status === VisitStatus.DONE) {
         throw new HttpError(
-          'Impossible de supprimer une visite déjà effectuée',
+          'Impossible de supprimer une visite deja effectuee',
           HttpStatus.BAD_REQUEST,
           'VISIT_ALREADY_DONE',
         );
@@ -245,12 +284,12 @@ export class VisitsService {
 
       await this.prisma.visit.delete({ where: { id: visitId } });
 
-      return { message: 'Visite supprimée avec succès' };
+      return { message: 'Visite supprimee avec succes' };
     } catch (error) {
       if (error instanceof HttpError) throw error;
       console.error('Erreur deleteVisit:', error);
       throw new InternalServerErrorException(
-        'Une erreur interne est survenue. Veuillez réessayer plus tard.',
+        'Une erreur interne est survenue. Veuillez reessayer plus tard.',
       );
     }
   }

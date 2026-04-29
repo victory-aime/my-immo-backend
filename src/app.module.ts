@@ -19,6 +19,7 @@ import { AnnonceModule } from '_root/modules/annonce/annonce.module';
 import { TeamModule } from '_root/modules/team/team.module';
 import { LeadsModule } from '_root/modules/leads/leads.module';
 import { VisitsModule } from '_root/modules/visits/visits.module';
+import { Notifications2Module } from '_root/modules/notifications2/notifications2.module';
 import { StatsModule } from '_root/modules/stats/stats.module';
 
 @Module({
@@ -65,6 +66,7 @@ import { StatsModule } from '_root/modules/stats/stats.module';
     TeamModule,
     LeadsModule,
     VisitsModule,
+    Notifications2Module,
     StatsModule,
   ],
 
