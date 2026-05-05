@@ -42,8 +42,9 @@ model User {
   twoFactor TwoFactor[]
   passkeys  Passkey[]
 
-  receivedNotifications Notification[] @relation("NotificationRecipient")
-  sentNotifications     Notification[] @relation("NotificationSender") // ✅ FIX: relation nommée
+  receivedNotifications Notification[]       @relation("NotificationRecipient")
+  sentNotifications     Notification[]       @relation("NotificationSender") // ✅ FIX: relation nommée
+  paymentTransaction    PaymentTransaction[]
 
   @@map("user")
 }
@@ -637,8 +638,9 @@ model SubscriptionPlan {
 
   isActive Boolean @default(true)
 
-  planFeatures  PlanFeature[]
-  subscriptions Subscription[]
+  planFeatures       PlanFeature[]
+  subscriptions      Subscription[]
+  paymentTransaction PaymentTransaction[]
 
   createdAt DateTime @default(now())
 
@@ -767,8 +769,37 @@ model Report {
 }
 
 // ─────────────────────────────────────────
+// NABOOPAY
+// ─────────────────────────────────────────
+// ── Modèle PaymentTransaction mis à jour ─────────────────────────────────────────
+model PaymentTransaction {
+  id             String           @id @default(uuid())
+  naboo_order_id String           @unique
+  checkout_url   String // URL de paiement NabooPay
+  amount_to_pay  Decimal
+  planId         String
+  userId         String?
+  status         PaymentStatus    @default(PENDING)
+  raw_webhook    Json? // payload brut archivé pour audit
+  confirmed_at   DateTime? // horodatage de la confirmation
+  metadata       Json /**snapshot complet du DTO d'onboarding agence, plan, billingCycle, etc.) lu par le webhook pour finaliser la création*/
+  plan           SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  user           User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@map("payment_transaction")
+}
+
+// ─────────────────────────────────────────
 // ENUMS
 // ─────────────────────────────────────────
+enum PaymentStatus {
+  PENDING // Transaction créée, client pas encore payé
+  PAID // Confirmé par webhook + double-check API NabooPay
+  FAILED // Paiement refusé ou expiré
+  CANCELLED // Annulé manuellement
+}
 
 enum Role {
   SUPER_ADMIN // back-office plateforme

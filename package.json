@@ -8,7 +8,9 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
+    "build:prod": "dotenv -e .env.prod -- cross-env NODE_ENV=prod nest build",
+    "start:prod": "dotenv -e .env.prod -- cross-env NODE_ENV=prod node dist/src/main",
+    "start": "dotenv -e .env -- cross-env NODE_ENV=local nest start",
     "start:dev": "dotenv -e .env -- cross-env NODE_ENV=local concurrently -n \"nest,prisma\" -c \"blue,magenta\" \"nest start --watch\" \"npx prisma studio --port 7777\"",
     "sync:dev": "dotenv -e .env -- cross-env NODE_ENV=local npx prisma db push",
     "migrate:dev": "dotenv -e .env -- cross-env NODE_ENV=local npx prisma migrate dev --name init_db",
@@ -84,6 +86,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/config": "^4.0.2",
     "@nestjs/schedule": "^6.1.0",
@@ -104,6 +107,7 @@
     "@types/nodemailer-express-handlebars": "^4.0.6",
     "@types/speakeasy": "^2.0.10",
     "@types/supertest": "^6.0.2",
+    "axios": "^1.16.0",
     "commitizen": "^4.3.1",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^9.18.0",

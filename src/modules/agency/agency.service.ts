@@ -9,8 +9,6 @@ import { PrismaService } from '_root/database/prisma.service';
 import { createAgencyOwnerDto, updateAgencyDto } from './agency.dto';
 import {
   AgencyStatus,
-  BillingCycle,
-  Plan,
   PricingType,
   Role,
   SubscriptionStatus,
@@ -18,14 +16,19 @@ import {
 import { UsersService } from '_root/modules/users/users.service';
 import { HttpError } from '_root/config/http.error';
 import { getAuthInstance } from '_root/lib/auth';
-import { Decimal } from '@prisma/client/runtime/index-browser';
 import { Subscription } from '../../../prisma/generated/client';
+import { PaymentService } from '_root/modules/common/services/payment.service';
+import * as crypto from 'crypto';
+import { UploadsService } from '../cloudinary/uploads.service';
+import { CLOUDINARY_FOLDER_NAME } from '_root/config/enum';
 
 @Injectable()
 export class AgencyService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly userService: UsersService,
+    private readonly paymentService: PaymentService,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   // ─────────────────────────────────────────
@@ -115,56 +118,60 @@ export class AgencyService {
   // ONBOARDING
   // ─────────────────────────────────────────
 
-  async createAgency(data: createAgencyOwnerDto): Promise<{ message: string }> {
+  async createAgency(
+    data: createAgencyOwnerDto,
+  ): Promise<{ message: string } | { checkout_url: string; order_id: string }> {
     try {
       const existingUser = await this.userService.findUser({
         email: data?.userEmail,
       });
       if (existingUser) {
-        throw new BadRequestException('Impossible de créer un compte avec cet email');
+        throw new HttpError('Impossible de créer un compte avec cet email', HttpStatus.BAD_REQUEST);
       }
-
-      const { user } = await getAuthInstance().api.signUpEmail({
-        body: {
-          name: data?.username,
-          email: data?.userEmail,
-          password: data?.password,
-        },
-      });
 
       const plan = await this.resolveActivePlan(data.plan?.planId);
       const isCommission = plan?.pricingType === PricingType.COMMISSION;
       const isSubscription = plan?.pricingType === PricingType.SUBSCRIPTION;
 
       // ─────────────────────────────────────────
-      // 4. SUBSCRIPTION PRICING (IF NEEDED)
+      // SUBSCRIPTION PLAN LOGIC
       // ─────────────────────────────────────────
-      let selectedPricing:
-        | {
-            id: string;
-            createdAt: Date;
-            planId: string;
-            billingCycle: BillingCycle;
-            price: Decimal;
-            currency: string;
-            discountPercentage: Decimal | null;
-          }
-        | undefined = undefined;
-
       if (isSubscription) {
-        selectedPricing = plan?.pricings?.find(
-          (p) => p.billingCycle === (data?.plan?.billingCycle ?? BillingCycle.MONTHLY),
-        );
-
-        if (!selectedPricing) {
-          throw new BadRequestException('Cycle de facturation invalide pour ce plan');
-        }
+        const uploadSessionId = `upload_${crypto.randomUUID()}`;
+        console.log('uploadId', uploadSessionId);
+        return this.paymentService.initiateAgencyPayment(data, uploadSessionId);
       }
 
       // ─────────────────────────────────────────
       // 5. TRANSACTION ATOMIQUE
       // ─────────────────────────────────────────
+
+      let uploadedDocuments: string[] = [];
+
+      if (isCommission && data.documents?.length) {
+        uploadedDocuments = await Promise.all(
+          data.documents.map(async (file) => {
+            const result = await this.uploadsService.uploadAgencyFile({
+              file,
+              agencyName: data.name,
+              folderName: CLOUDINARY_FOLDER_NAME.DOC,
+              isTemp: false,
+            });
+
+            return result.secure_url;
+          }),
+        );
+      }
+
       await this.prismaService.$transaction(async (tx) => {
+        const { user } = await getAuthInstance().api.signUpEmail({
+          body: {
+            name: data?.username,
+            email: data?.userEmail,
+            password: data?.password,
+          },
+        });
+
         // 5a. OWNER
         const owner = await tx.owner.create({
           data: { userId: user.id },
@@ -184,61 +191,25 @@ export class AgencyService {
             ownerId: owner.id,
             address: data.address,
             phone: data.phone,
-            documents: data.documents ?? [],
+            description: data.description,
+            documents: isCommission ? uploadedDocuments : [],
             acceptTerms: data.acceptTerms,
           },
         });
 
         // ─────────────────────────────────────────
-        // 5d. SUBSCRIPTION DATA
-        // ─────────────────────────────────────────
-        const subscriptionData: Subscription | any = {
-          agencyId: agency.id,
-          planId: plan?.id!,
-          pricingType: plan?.pricingType!,
-        };
-
-        // ─────────────────────────────────────────
-        // COMMISSION PLAN LOGIC
-        // ─────────────────────────────────────────
-        if (isCommission) {
-          subscriptionData.commissionRate = plan.commissionRate;
-        }
-
-        // ─────────────────────────────────────────
-        // SUBSCRIPTION PLAN LOGIC
-        // ─────────────────────────────────────────
-        if (isSubscription) {
-          const now = new Date();
-          const billingCycle = selectedPricing?.billingCycle;
-          const endDate = new Date(now);
-
-          if (billingCycle === BillingCycle.MONTHLY) {
-            endDate.setMonth(endDate.getMonth() + 1);
-          }
-
-          if (billingCycle === BillingCycle.YEARLY) {
-            endDate.setFullYear(endDate.getFullYear() + 1);
-          }
-
-          subscriptionData.billingCycle = billingCycle!;
-          subscriptionData.price = selectedPricing?.price!;
-          subscriptionData.currency = selectedPricing?.currency!;
-          subscriptionData.currentPeriodStart = now;
-          subscriptionData.currentPeriodEnd = endDate;
-        }
-
-        // ─────────────────────────────────────────
-        // 5e. CREATE SUBSCRIPTION
+        // 5. CREATE SUBSCRIPTION
         // ─────────────────────────────────────────
         await tx.subscription.create({
-          data: subscriptionData,
+          data: {
+            agencyId: agency.id,
+            planId: plan?.id!,
+            pricingType: plan?.pricingType!,
+            commissionRate: plan?.commissionRate,
+          },
         });
       });
 
-      // ─────────────────────────────────────────
-      // SUCCESS RESPONSE
-      // ─────────────────────────────────────────
       return {
         message: 'Votre agence a été créée avec succès et est en attente de validation.',
       };
@@ -250,7 +221,6 @@ export class AgencyService {
       ) {
         throw new HttpError('Une erreur est survenue, veuillez réessayer plus tard');
       }
-      console.error('Erreur onboarding agence:', error);
       await this.prismaService.user.delete({
         where: { email: data.userEmail },
       });
@@ -283,34 +253,6 @@ export class AgencyService {
         throw error;
       }
       console.error('Erreur updateAgency:', error);
-      throw new InternalServerErrorException('Une erreur est survenue, réessayez plus tard.');
-    }
-  }
-
-  // ─────────────────────────────────────────
-  // CHANGEMENT DE PLAN
-  // ─────────────────────────────────────────
-
-  async changePlan(agencyId: string, newPlan: Plan): Promise<{ message: string }> {
-    try {
-      //await this.findAgency(agencyId),;
-      const plan = await this.resolveActivePlan(newPlan);
-
-      // @@unique([agencyId]) sur Subscription → on update directement
-      await this.prismaService.subscription.update({
-        where: { agencyId },
-        data: {
-          planId: plan?.id,
-          updatedAt: new Date(),
-        },
-      });
-
-      return { message: `Passage au plan ${newPlan} effectué avec succès.` };
-    } catch (error) {
-      if (error instanceof NotFoundException || error instanceof HttpError) {
-        throw error;
-      }
-      console.error('Erreur changePlan:', error);
       throw new InternalServerErrorException('Une erreur est survenue, réessayez plus tard.');
     }
   }

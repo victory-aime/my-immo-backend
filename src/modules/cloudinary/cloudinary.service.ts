@@ -20,10 +20,14 @@ export class CloudinaryService {
     resourceType: 'image' | 'raw',
   ): Promise<UploadApiResponse> {
     return new Promise((resolve, reject) => {
+      // ✅ Pour les images, Cloudinary ajoute l'ext automatiquement → on la retire du public_id
+      // Pour raw, il ne l'ajoute pas → on la garde
+      const publicId = resourceType === 'image' ? filename.replace(/\.[^/.]+$/, '') : filename;
+
       const stream = cloudinary.uploader.upload_stream(
         {
           resource_type: resourceType,
-          public_id: filename,
+          public_id: publicId,
           folder: folderPath,
           access_mode: 'public',
           overwrite: true,
@@ -42,13 +46,70 @@ export class CloudinaryService {
     });
   }
 
+  async listFiles(folderPath: string) {
+    const prefix = folderPath.replace(/\/$/, '');
+
+    const fetchByType = (resource_type: 'image' | 'raw' | 'video') =>
+      cloudinary.api
+        .resources({
+          type: 'upload',
+          resource_type,
+          prefix,
+          max_results: 500,
+        })
+        .then((r) => r.resources || [])
+        .catch(() => []);
+
+    const [images, raws, videos] = await Promise.all([
+      fetchByType('image'),
+      fetchByType('raw'),
+      fetchByType('video'),
+    ]);
+
+    const all = [...images, ...raws, ...videos];
+
+    return all;
+  }
+
+  async moveFile(publicId: string, newFolder: string, resourceType: 'image' | 'raw') {
+    try {
+      const filename = publicId.split('/').pop();
+      const newPublicId = `${newFolder}/${filename}`;
+
+      return await cloudinary.uploader.rename(publicId, newPublicId, {
+        overwrite: true,
+        resource_type: resourceType, // ✅ correct
+      });
+    } catch (err) {
+      console.error('Erreur move file Cloudinary:', err);
+      throw err;
+    }
+  }
+
   async deleteFolder(folderPath: string): Promise<void> {
     try {
-      await cloudinary.api.delete_resources_by_prefix(folderPath);
-      await cloudinary.api.delete_folder(folderPath);
+      // 1. supprimer images
+      await cloudinary.api
+        .delete_resources_by_prefix(folderPath, {
+          resource_type: 'image',
+        })
+        .catch(() => {});
+
+      // 2. supprimer raw (PDF etc)
+      await cloudinary.api
+        .delete_resources_by_prefix(folderPath, {
+          resource_type: 'raw',
+        })
+        .catch(() => {});
+
+      // 3. attendre propagation Cloudinary
+      await new Promise((res) => setTimeout(res, 500));
+
+      // 4. supprimer dossier
+      await cloudinary.api.delete_folder(folderPath).catch(() => {});
     } catch (err) {
-      console.error('Erreur lors de la suppression de l’image Cloudinary :', err);
-      throw err;
+      console.error('Erreur suppression Cloudinary:', err);
+      // ❌ NE PAS throw → surtout pour CRON
     }
   }
 

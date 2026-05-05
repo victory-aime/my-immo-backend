@@ -27,6 +27,7 @@ enum CLOUDINARY_FOLDER_NAME {
   PROPERTY = 'properties',
   USERS = 'USERS',
   ANNONCE = 'annonces',
+  TEMP = 'temporary_files',
 }
 
 enum SWAGGER_TAGS {
