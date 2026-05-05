@@ -45,7 +45,7 @@ export class createAgencyOwnerDto {
   @ApiProperty({
     description: "Listes des documents pour valider l'identité",
   })
-  documents?: string[];
+  documents?: string[] | File[] | any;
 
   // ✅ Plan choisi à l'onboarding (BASIC par défaut)
   @IsObject()

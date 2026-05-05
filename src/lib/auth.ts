@@ -37,6 +37,12 @@ export const getAuthInstance = (): AuthInstance => {
 //
 export const createAuth = (): ReturnType<typeof betterAuth> => {
   return betterAuth({
+    advanced: {
+      crossSubDomainCookies: {
+        enabled: false,
+        domain: process.env.COOKIE_DOMAIN,
+      },
+    },
     appName: process.env.APP_NAME,
     baseURL: process.env.BETTER_AUTH_URL,
     database: prismaAdapter(prisma, {
@@ -171,6 +177,8 @@ export const createAuth = (): ReturnType<typeof betterAuth> => {
       'http://localhost:5080',
       'http://localhost:8082',
       'http://localhost:8081',
+      'https://vlpgtcwk-5080.euw.devtunnels.ms',
+      'https://vlpgtcwk-3000.euw.devtunnels.ms',
       'exp://',
       'exp://**',
       'exp://192.168.*.*:*/**',

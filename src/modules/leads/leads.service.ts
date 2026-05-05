@@ -1,8 +1,8 @@
 import { HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { HttpError } from '_root/config/http.error';
-import { AssignLeadDto,  CreateLeadDto, UpdateLeadStatusDto } from './leads.dto';
-import {  LeadStatus } from '../../../prisma/generated/enums';
+import { AssignLeadDto, CreateLeadDto, UpdateLeadStatusDto } from './leads.dto';
+import { LeadStatus } from '../../../prisma/generated/enums';
 import { AgencyService } from '../agency/agency.service';
 
 @Injectable()
@@ -74,7 +74,7 @@ export class LeadsService {
       return this.prisma.lead.findMany({
         where: { agencyId },
         include: {
-          property: { select: { title: true, type: true, city: true } },
+          property: { select: { title: true, type: true, city: true, price: true } },
           client: {
             select: {
               phone: true,

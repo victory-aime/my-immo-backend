@@ -26,6 +26,8 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://localhost:5080',
       'http://localhost:8082',
+      'https://vlpgtcwk-5080.euw.devtunnels.ms',
+      'https://vlpgtcwk-3000.euw.devtunnels.ms',
       'exp://',
       'exp://**',
       'exp://192.168.*.*:*/**',
@@ -34,8 +36,9 @@ async function bootstrap() {
 
     const origin = req.headers.origin;
 
-    if (allowedOrigins.includes(origin!)) {
-      res.header('Access-Control-Allow-Origin', origin); // 🔥 dynamique
+    if (origin && (origin.startsWith('http://localhost') || origin.includes('.devtunnels.ms'))) {
+      console.log('Origin:', origin);
+      res.header('Access-Control-Allow-Origin', origin);
     }
 
     res.header('Access-Control-Allow-Credentials', 'true');
