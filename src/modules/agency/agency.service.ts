@@ -39,6 +39,7 @@ export class AgencyService {
     await this.agencyAccessControl(agencyId, userId);
     const agency = await this.prismaService.agency.findUnique({
       where: { id: agencyId },
+      include: { owner: true },
     });
     if (!agency) {
       throw new NotFoundException('Agency not found');
