@@ -3,18 +3,23 @@ import { PrismaService } from '_root/database/prisma.service';
 import { AssignAgentDto, CreateVisitDto, UpdateVisitStatusDto } from './visits.dto';
 import { NotificationType, VisitStatus } from '../../../prisma/generated/enums';
 import { HttpError } from '_root/config/http.error';
-import { Notifications2Service } from '_root/modules/notifications2/notifications2.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationScope } from '_root/modules/notifications/notifications.dto';
+import { AgencyService } from '_root/modules/agency/agency.service';
 
 @Injectable()
 export class VisitsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notificationsService: Notifications2Service, // ✅ injecté
+    private readonly notificationsService: NotificationsService,
+    private readonly agencyService: AgencyService,
   ) {}
 
   // CREER UNE VISITE
-  async createVisit(dto: CreateVisitDto, agencyId: string) {
+  async createVisit(dto: CreateVisitDto, agencyId: string, userId: string) {
+    await this.agencyService.agencyAccessControl(agencyId, userId);
     try {
+      const getOwnerId = await this.agencyService.findAgency(agencyId, userId);
       // 1. Verifier que le lead existe
       const lead = await this.prisma.lead.findUnique({
         where: { id: dto.leadId },
@@ -57,14 +62,27 @@ export class VisitsService {
 
       // 🔔 Notifier le client que sa visite a ete planifiee
       const clientUserId = lead.client?.user?.id;
-      if (clientUserId) {
-        await this.notificationsService.sendNotification({
-          type: NotificationType.VISIT,
-          recipientId: clientUserId,
-          title: 'Visite planifiee',
-          content: `Votre visite pour le bien "${property.title}" a ete planifiee le ${new Date(dto.scheduledAt).toLocaleDateString('fr-FR')}.`,
-          agencyId,
-        });
+
+      if (clientUserId && getOwnerId.owner.userId) {
+        const date = new Date(dto.scheduledAt).toLocaleDateString('fr-FR');
+        const scope = NotificationScope.USER;
+        await Promise.all([
+          this.notificationsService.createNotification({
+            type: NotificationType.VISIT,
+            scope,
+            title: 'Visite planifiée',
+            content: `Votre visite pour le bien "${property.title}" a été planifiée le ${date}.`,
+            recipients: [clientUserId],
+          }),
+
+          this.notificationsService.createNotification({
+            type: NotificationType.VISIT,
+            scope,
+            title: 'Nouvelle visite',
+            content: `Une visite a été planifiée pour le bien "${property.title}" le ${date}.`,
+            recipients: [getOwnerId.owner.userId],
+          }),
+        ]);
       }
 
       return { message: 'Visite planifiee avec succes' };
@@ -78,27 +96,29 @@ export class VisitsService {
   }
 
   // LISTER LES VISITES D'UNE AGENCE
-  async getVisitsByAgency(agencyId: string) {
+  async getVisitsByAgency(agencyId: string, userId: string) {
+    //await this.agencyService.agencyAccessControl(agencyId, userId);
     try {
-      const visits = await this.prisma.visit.findMany({
+      return await this.prisma.visit.findMany({
         where: { agencyId },
-        include: {
-          property: { select: { title: true, address: true, city: true } },
-          agent: { select: { user: { select: { name: true, email: true } } } },
+        select: {
+          id: true,
+          scheduledAt: true,
+          status: true,
+          notes: true,
           lead: {
-            include: {
+            select: {
+              id: true,
+              property: {
+                select: { id: true, title: true, address: true, city: true, price: true },
+              },
               client: { include: { user: { select: { name: true, email: true } } } },
+              assignedTo: { select: { user: { select: { id: true, name: true } } } },
             },
           },
         },
         orderBy: { scheduledAt: 'asc' },
       });
-
-      if (visits.length === 0) {
-        return { message: 'Aucune visite trouvee pour cette agence.' };
-      }
-
-      return visits;
     } catch (error) {
       if (error instanceof HttpError) throw error;
       console.error('Erreur getVisitsByAgency:', error);
@@ -203,12 +223,12 @@ export class VisitsService {
           [VisitStatus.CANCELLED]: 'annulee',
         };
 
-        await this.notificationsService.sendNotification({
+        await this.notificationsService.createNotification({
           type: NotificationType.VISIT,
-          recipientId: clientUserId,
+          recipients: [clientUserId],
+          scope: NotificationScope.USER,
           title: 'Mise a jour de votre visite',
           content: `Votre visite pour le bien "${visit.property?.title}" est desormais ${statusLabels[dto.status]}.`,
-          agencyId: visit.agencyId,
         });
       }
 
@@ -248,12 +268,12 @@ export class VisitsService {
       });
 
       // 🔔 Notifier l'agent qu'une visite lui a ete assignee
-      await this.notificationsService.sendNotification({
+      await this.notificationsService.createNotification({
         type: NotificationType.VISIT,
-        recipientId: agent.user.id,
+        recipients: [agent.user.id],
         title: 'Nouvelle visite assignee',
+        scope: NotificationScope.USER,
         content: `Une visite vous a ete assignee le ${new Date(visit.scheduledAt).toLocaleDateString('fr-FR')}.`,
-        agencyId: visit.agencyId,
       });
 
       return { message: 'Agent assigne avec succes' };

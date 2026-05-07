@@ -37,14 +37,12 @@ model User {
   staff  Staff?
   client Client?
 
-  sessions  Session[]
-  accounts  Account[]
-  twoFactor TwoFactor[]
-  passkeys  Passkey[]
-
-  receivedNotifications Notification[]       @relation("NotificationRecipient")
-  sentNotifications     Notification[]       @relation("NotificationSender") // ✅ FIX: relation nommée
-  paymentTransaction    PaymentTransaction[]
+  sessions             Session[]
+  accounts             Account[]
+  twoFactor            TwoFactor[]
+  passkeys             Passkey[]
+  paymentTransaction   PaymentTransaction[]
+  notificationDelivery NotificationDelivery[]
 
   @@map("user")
 }
@@ -203,7 +201,6 @@ model Agency {
   tickets               Ticket[]
   transactions          Transaction[]
   reports               Report[]
-  notifications         Notification[]
   visits                Visit[]
   transactionCommission TransactionCommission[]
   lands                 Land[]
@@ -730,24 +727,31 @@ model StaffPermission {
 // =======================
 
 model Notification {
-  id      String           @id @default(uuid())
-  type    NotificationType
-  title   String?
-  content String
-  isRead  Boolean          @default(false)
+  id        String            @id @default(uuid())
+  type      NotificationType
+  title     String?
+  content   String
+  scope     NotificationScope @default(USER)
+  createdAt DateTime          @default(now())
 
-  recipientId String
-  recipient   User    @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade) // ✅ FIX: relation nommée
-  senderId    String?
-  sender      User?   @relation("NotificationSender", fields: [senderId], references: [id]) // ✅ FIX: relation nommée + FK définie
-  agencyId    String?
-  agency      Agency? @relation(fields: [agencyId], references: [id])
+  deliveries NotificationDelivery[]
 
-  createdAt DateTime @default(now())
-
-  @@index([recipientId])
-  @@index([agencyId])
+  @@index([scope])
   @@map("notification")
+}
+
+model NotificationDelivery {
+  id String @id @default(uuid())
+
+  notificationId String
+  userId         String
+  isRead         Boolean @default(false)
+
+  notification Notification @relation(fields: [notificationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("notification_delivery")
 }
 
 // ─────────────────────────────────────────
@@ -841,6 +845,13 @@ enum NotificationType {
   PAYMENT
   MAINTENANCE
   SYSTEM
+}
+
+enum NotificationScope {
+  USER
+  AGENCY
+  STAFF
+  ADMIN
 }
 
 enum FeatureCategory {

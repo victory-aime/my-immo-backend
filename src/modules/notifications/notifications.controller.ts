@@ -1,15 +1,11 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import {
-  ApiBadRequestResponse,
-  ApiBearerAuth,
-  ApiBody,
-  ApiOkResponse,
-  ApiOperation,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBadRequestResponse, ApiBearerAuth, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { API_URL } from '_root/config/api';
 import { NotificationsService } from './notifications.service';
+import { AuthGuard } from '@thallesp/nestjs-better-auth';
 
 @Controller()
+@UseGuards(AuthGuard)
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
@@ -22,8 +18,8 @@ export class NotificationsController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async getAllNotifications(@Query('recipientId') recipientId: string) {
-    return this.notificationsService.getAllNotifications(recipientId);
+  async getAllNotifications(@Query('userId') userId: string) {
+    return this.notificationsService.getUserNotifications(userId);
   }
 
   @Post(API_URL.NOTIFICATION.READ_ALL)
@@ -35,8 +31,8 @@ export class NotificationsController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async markAllAsRead(@Query('recipientId') recipientId: string) {
-    return this.notificationsService.markAllAsRead(recipientId);
+  async markAllAsRead(@Query('userId') userId: string) {
+    return this.notificationsService.readAllNotifications(userId);
   }
 
   @Post(API_URL.NOTIFICATION.READ_ONE)
@@ -50,9 +46,9 @@ export class NotificationsController {
   })
   async readOneNotification(
     @Query('notificationId') notificationId: string,
-    @Query('recipientId') recipientId: string,
+    @Query('userId') userId: string,
   ) {
-    return this.notificationsService.markAsRead(notificationId, recipientId);
+    return this.notificationsService.readOneNotification(notificationId, userId);
   }
 
   @Get(API_URL.NOTIFICATION.GET_UNREAD_NOTIF)
@@ -64,7 +60,7 @@ export class NotificationsController {
   @ApiBadRequestResponse({
     description: 'Une erreur est survenue réessayer plus tard',
   })
-  async getAllUnreadNotification(@Query('recipientId') recipientId: string) {
-    return this.notificationsService.getUnreadNotifications(recipientId);
+  async getAllUnreadNotification(@Query('userId') userId: string) {
+    return this.notificationsService.getUnreadNotifications(userId);
   }
 }

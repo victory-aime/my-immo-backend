@@ -2,10 +2,11 @@ import { Module } from '@nestjs/common';
 import { VisitsController } from './visits.controller';
 import { VisitsService } from './visits.service';
 import { DatabaseModule } from '_root/database/database.module';
-import { Notifications2Module } from '_root/modules/notifications2/notifications2.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { AgencyModule } from '_root/modules/agency/agency.module';
 
 @Module({
-  imports: [DatabaseModule, Notifications2Module], //  ajouté
+  imports: [DatabaseModule, NotificationsModule, AgencyModule],
   controllers: [VisitsController],
   providers: [VisitsService],
   exports: [VisitsService],

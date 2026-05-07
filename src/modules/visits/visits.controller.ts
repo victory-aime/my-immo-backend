@@ -9,7 +9,6 @@ import {
 } from '@nestjs/swagger';
 import { VisitsService } from './visits.service';
 import { AssignAgentDto, CreateVisitDto, UpdateVisitStatusDto } from './visits.dto';
-//import { Role } from '../../../prisma/generated/enums';
 import { MiddlewareGuard } from '_root/guard/middleware.guard';
 import { AllowAnonymous, AuthGuard } from '@thallesp/nestjs-better-auth';
 import { API_URL } from '_root/config/api';
@@ -29,8 +28,12 @@ export class VisitsController {
   @ApiBody({ type: CreateVisitDto })
   @ApiOkResponse({ description: 'Visite planifiée avec succès' })
   @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
-  async createVisit(@Body() dto: CreateVisitDto, @Query('agencyId') agencyId: string) {
-    return this.visitsService.createVisit(dto, agencyId);
+  async createVisit(
+    @Body() dto: CreateVisitDto,
+    @Query('agencyId') agencyId: string,
+    @Query('userId') userId: string,
+  ) {
+    return this.visitsService.createVisit(dto, agencyId, userId);
   }
 
   // GET v1/secure/visits/agency-visits?agencyId=
@@ -39,8 +42,8 @@ export class VisitsController {
   @ApiOperation({ summary: "Lister toutes les visites d'une agence" })
   @ApiOkResponse({ description: 'Liste des visites récupérée avec succès' })
   @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
-  async getVisitsByAgency(@Query('agencyId') agencyId: string) {
-    return this.visitsService.getVisitsByAgency(agencyId);
+  async getVisitsByAgency(@Query('agencyId') agencyId: string, userId: string) {
+    return this.visitsService.getVisitsByAgency(agencyId, userId);
   }
 
   // GET v1/secure/visits/detail?visitId=

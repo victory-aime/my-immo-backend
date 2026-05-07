@@ -2,14 +2,17 @@ import { HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/co
 import { PrismaService } from '_root/database/prisma.service';
 import { HttpError } from '_root/config/http.error';
 import { AssignLeadDto, CreateLeadDto, UpdateLeadStatusDto } from './leads.dto';
-import { LeadStatus } from '../../../prisma/generated/enums';
+import { LeadStatus, NotificationType } from '../../../prisma/generated/enums';
 import { AgencyService } from '../agency/agency.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationScope } from '_root/modules/notifications/notifications.dto';
 
 @Injectable()
 export class LeadsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly agencyService: AgencyService,
+    private readonly notificationService: NotificationsService,
   ) {}
 
   // ─────────────────────────────────────────────────────────────────
@@ -227,7 +230,7 @@ export class LeadsService {
         );
       }
 
-      return this.prisma.lead.update({
+      await this.prisma.lead.update({
         where: { id: dto.leadId },
         data: { assignedToId: dto.staffId },
         include: {
@@ -236,6 +239,17 @@ export class LeadsService {
           },
         },
       });
+      await this.notificationService.notifyStaff({
+        staffUserId: [staff.userId],
+        payload: {
+          type: NotificationType.LEAD,
+          title: 'Nouvelle tâche',
+          content: 'Vous avez été assigné à une tâche',
+        },
+      });
+      return {
+        message: 'Tâche assignée avec success',
+      };
     } catch (error) {
       if (error instanceof HttpError) throw error;
       console.error('Erreur assignLead:', error);
