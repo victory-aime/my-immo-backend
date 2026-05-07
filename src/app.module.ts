@@ -20,7 +20,7 @@ import { TeamModule } from '_root/modules/team/team.module';
 import { LeadsModule } from '_root/modules/leads/leads.module';
 import { VisitsModule } from '_root/modules/visits/visits.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { Notifications2Module } from '_root/modules/notifications2/notifications2.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { StatsModule } from '_root/modules/stats/stats.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -70,7 +70,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     TeamModule,
     LeadsModule,
     VisitsModule,
-    Notifications2Module,
+    NotificationsModule,
     StatsModule,
     NotificationsModule,
   ],
