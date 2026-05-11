@@ -70,7 +70,6 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     VisitsModule,
     NotificationsModule,
     StatsModule,
-    NotificationsModule,
   ],
 
   providers: [
