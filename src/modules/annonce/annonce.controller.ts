@@ -15,10 +15,11 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
-  ApiConsumes,
 } from '@nestjs/swagger';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -37,16 +38,11 @@ export class AnnonceController {
   ) {}
 
   // 1. CRÉER UNE ANNONCE (Avec Upload d'images)
-
   @ApiBearerAuth()
   @Post(API_URL.ANNONCE.CREATE)
-  @ApiConsumes('multipart/form-data') //  Précise à Swagger qu'on envoie des fichiers
-  @ApiOperation({
-    summary: 'Publier une nouvelle annonce immobilière avec images',
-  })
-  @ApiBody({
-    type: CreateAnnonceDto,
-  })
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Publier une nouvelle annonce immobilière avec images' })
+  @ApiBody({ type: CreateAnnonceDto })
   @ApiOkResponse({ description: 'Annonce créée avec succès' })
   @ApiBadRequestResponse({ description: 'Données ou fichiers invalides' })
   @UseInterceptors(FileFieldsInterceptor([{ name: 'galleryImages', maxCount: 5 }]))
@@ -59,7 +55,7 @@ export class AnnonceController {
     let cloudinaryImagesUrls: string[] = [];
 
     if (files?.galleryImages?.length) {
-      const agency = await this.agencyService.findAgency(data?.agencyId!, data?.userId!);
+      const agency = await this.agencyService.findAgency(data?.agencyId!);
       const uploads = await Promise.all(
         files.galleryImages.map((file) =>
           this.uploadFileService.uploadFiles(
@@ -83,21 +79,30 @@ export class AnnonceController {
   @Get(API_URL.ANNONCE.FIND_ALL)
   @ApiOperation({ summary: 'Récupérer toutes les annonces actives' })
   @ApiOkResponse({ description: 'Liste des annonces récupérée' })
+  @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
   async findAll() {
     return this.annonceService.findAllAnnonces();
   }
 
   // 3. LISTE PAR AGENCE
+  @ApiBearerAuth()
   @Get(API_URL.ANNONCE.FIND_BY_AGENCY)
-  @ApiOperation({ summary: 'Récupérer les annonces d’une agence spécifique' })
-  async findByAgency(@Query('agencyId') agencyId: string, @Query('userId') userId: string) {
-    return this.annonceService.findAnnoncesByAgency(agencyId, userId);
+  @ApiOperation({ summary: "Récupérer les annonces d'une agence spécifique" })
+  @ApiQuery({ name: 'agencyId', required: true, description: "Identifiant de l'agence" })
+  @ApiOkResponse({ description: "Annonces de l'agence récupérées avec succès" })
+  @ApiBadRequestResponse({ description: 'Une erreur est survenue' })
+  async findByAgency(@Query('agencyId') agencyId: string) {
+    return this.annonceService.findAnnoncesByAgency(agencyId);
   }
 
   // 4. MODIFIER
   @ApiBearerAuth()
   @Put(API_URL.ANNONCE.UPDATE)
   @ApiOperation({ summary: 'Mettre à jour une annonce' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: UpdateAnnonceDto })
+  @ApiOkResponse({ description: 'Annonce mise à jour avec succès' })
+  @ApiBadRequestResponse({ description: 'Données ou fichiers invalides' })
   @UseInterceptors(FileFieldsInterceptor([{ name: 'galleryImages', maxCount: 5 }]))
   async updateAnnonce(
     @Body('data') rawData: string,
@@ -108,7 +113,7 @@ export class AnnonceController {
     let cloudinaryImagesUrls: string[] = [];
 
     if (files?.galleryImages?.length) {
-      const agency = await this.agencyService.findAgency(data?.agencyId!, data?.userId!);
+      const agency = await this.agencyService.findAgency(data?.agencyId!);
       const uploads = await Promise.all(
         files.galleryImages.map((file) =>
           this.uploadFileService.uploadFiles(
@@ -131,6 +136,9 @@ export class AnnonceController {
   @ApiBearerAuth()
   @Delete(API_URL.ANNONCE.DELETE)
   @ApiOperation({ summary: 'Supprimer une annonce' })
+  @ApiQuery({ name: 'id', required: true, description: "Identifiant de l'annonce à supprimer" })
+  @ApiOkResponse({ description: 'Annonce supprimée avec succès' })
+  @ApiBadRequestResponse({ description: 'Annonce introuvable ou erreur serveur' })
   async remove(@Query('id') id: string) {
     return this.annonceService.deleteAnnonce(id);
   }
