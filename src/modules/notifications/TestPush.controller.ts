@@ -5,7 +5,6 @@ import { Queue } from 'bullmq';
 import { IsOptional, IsString, IsUUID } from 'class-validator';
 import { PUSH_QUEUE, PushJobData } from './dto/push-job';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
-import { FirebaseService } from '_root/modules/common/services/firebase-admin.service';
 import { firebaseAdmin } from '_root/lib/firebase-admin';
 
 class TestPushDto {
@@ -26,7 +25,6 @@ class TestPushDto {
 @AllowAnonymous()
 export class NotificationsTestController {
   //constructor(@InjectQueue(PUSH_QUEUE) private readonly pushQueue: Queue<PushJobData>) {}
-  constructor(private readonly firebaseService: FirebaseService) {}
 
   /**
    * POST /notifications/test
@@ -66,7 +64,7 @@ export class NotificationsTestController {
       },
     };
 
-    const response = await this.firebaseService.getMessaging().send(message);
+    const response = await firebaseAdmin.messaging().send(message);
 
     return {
       success: true,
