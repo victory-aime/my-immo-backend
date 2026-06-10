@@ -48,7 +48,7 @@ export class AgencyAdminService {
     const agency = await this.prismaService.agency.findUnique({
       where: { id: agencyId },
       include: {
-        // ── Propriétaire ──
+        // ── Propriétaire — infos complètes ──
         owner: {
           include: {
             user: {
@@ -62,7 +62,7 @@ export class AgencyAdminService {
             },
           },
         },
-        // ── Équipe ──
+        // ── Équipe — infos complètes ──
         staff: {
           include: {
             user: {
@@ -74,37 +74,68 @@ export class AgencyAdminService {
             },
           },
         },
-        // ── Abonnement ──
+        // ── Abonnement — infos complètes ──
         subscriptions: {
           include: {
             plan: true,
           },
         },
-        // ── Propriétés & Immobilier ──
-        properties: true,
-        batiment: true,
-        villas: true,
-        lands: true,
-        // ── Activité commerciale ──
-        leads: true,
-        visits: true,
-        tenants: true,
-        contracts: true,
-        // ── Finance ──
-        transactions: true,
-        transactionCommission: true,
-        // ── Support & Admin ──
-        tickets: true,
-        reports: true,
-        invitations: true,
+
+        properties: { select: { id: true } },
+        batiment: { select: { id: true } },
+        villas: { select: { id: true } },
+        lands: { select: { id: true } },
+        leads: { select: { id: true } },
+        visits: { select: { id: true } },
+        tenants: { select: { id: true } },
+        contracts: { select: { id: true } },
+        transactions: { select: { id: true } },
+        transactionCommission: { select: { id: true } },
+        tickets: { select: { id: true } },
+        reports: { select: { id: true } },
+        invitations: { select: { id: true } },
       },
     });
 
     if (!agency) {
-      throw new NotFoundException(`Agence avec l'ID ${agencyId} introuvable`);
+      throw new NotFoundException(` Le nom de l'agence est introuvable`);
     }
 
-    return agency;
+    const {
+      properties,
+      batiment,
+      villas,
+      lands,
+      leads,
+      visits,
+      tenants,
+      contracts,
+      transactions,
+      transactionCommission,
+      tickets,
+      reports,
+      invitations,
+      ...agencyDetails
+    } = agency;
+
+    return {
+      ...agencyDetails,
+      stats: {
+        properties: properties.length,
+        batiments: batiment.length,
+        villas: villas.length,
+        lands: lands.length,
+        leads: leads.length,
+        visits: visits.length,
+        tenants: tenants.length,
+        contracts: contracts.length,
+        transactions: transactions.length,
+        transactionCommissions: transactionCommission.length,
+        tickets: tickets.length,
+        reports: reports.length,
+        invitations: invitations.length,
+      },
+    };
   }
   // ─────────────────────────────────────────
   // 3. Changer le statut d'une agence
@@ -115,20 +146,16 @@ export class AgencyAdminService {
     });
 
     if (!agency) {
-      throw new NotFoundException(`Agence avec l'ID ${agencyId} introuvable`);
+      throw new NotFoundException(` Le nom de l'agence est introuvable`);
     }
 
     try {
-      return await this.prismaService.agency.update({
+      await this.prismaService.agency.update({
         where: { id: agencyId },
         data: { status },
-        select: {
-          id: true,
-          name: true,
-          status: true,
-          updatedAt: true,
-        },
       });
+
+      return { message: 'Mise à jour effectuée avec succès' };
     } catch (error) {
       throw new InternalServerErrorException(
         'Une erreur est survenue lors de la mise à jour du statut.',

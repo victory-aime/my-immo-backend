@@ -1,22 +1,20 @@
-import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Query, Patch } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
   ApiOkResponse,
   ApiOperation,
-  ApiParam,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AgencyAdminService } from './agency-admin.service';
 import { UpdateAgencyStatusDto } from './dto/update-agency-status.dto';
 import { API_URL } from '_root/config/api';
-import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
 @ApiTags('Super Admin - Agences')
 @Controller()
-@AllowAnonymous()
 @ApiBearerAuth()
 export class AdminAgencyController {
   constructor(private readonly agencyAdminService: AgencyAdminService) {}
@@ -41,11 +39,11 @@ export class AdminAgencyController {
     description:
       "Retourne toutes les informations d'une agence (owner, staff, abonnement) via son ID.",
   })
-  @ApiParam({ name: 'id', description: "Identifiant UUID de l'agence" })
+  @ApiQuery({ name: 'id', description: "Identifiant UUID de l'agence" })
   @ApiOkResponse({ description: "Détail de l'agence récupéré avec succès" })
   @ApiBadRequestResponse({ description: 'Agence introuvable' })
   @ApiUnauthorizedResponse({ description: 'Token Bearer manquant ou invalide' })
-  async getAgencyById(@Param('id') id: string) {
+  async getAgencyById(@Query('id') id: string) {
     return this.agencyAdminService.getAgencyById(id);
   }
 
@@ -56,12 +54,12 @@ export class AdminAgencyController {
     description:
       "Permet au SUPER_ADMIN de changer le statut d'une agence : PENDING → OPEN (validation) ou OPEN → CLOSE (suspension).",
   })
-  @ApiParam({ name: 'id', description: "Identifiant UUID de l'agence" })
+  @ApiQuery({ name: 'id', description: "Identifiant UUID de l'agence" })
   @ApiBody({ type: UpdateAgencyStatusDto })
   @ApiOkResponse({ description: 'Statut mis à jour avec succès' })
   @ApiBadRequestResponse({ description: 'Agence introuvable ou statut invalide' })
   @ApiUnauthorizedResponse({ description: 'Token Bearer manquant ou invalide' })
-  async updateAgencyStatus(@Param('id') id: string, @Body() dto: UpdateAgencyStatusDto) {
+  async updateAgencyStatus(@Query('id') id: string, @Body() dto: UpdateAgencyStatusDto) {
     return this.agencyAdminService.updateAgencyStatus(id, dto.status);
   }
 }
