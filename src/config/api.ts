@@ -22,7 +22,7 @@ export const API_URL = {
   AGENCY_ADMIN: {
     LIST: `${BASE_APIS_URL.SECURED}/admin/agencies`,
     DETAIL: `${BASE_APIS_URL.SECURED}/admin/agencies/:detail`,
-    UPDATE_STATUS: `${BASE_APIS_URL.SECURED}/admin/agencies/:update-status`,
+    UPDATE_STATUS: `${BASE_APIS_URL.SECURED}/admin/agencies/`,
   },
   LAND: {
     CREATE_LAND: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.LAND}/create-land`,
