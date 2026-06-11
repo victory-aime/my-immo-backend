@@ -21,8 +21,8 @@ export const API_URL = {
   },
   AGENCY_ADMIN: {
     LIST: `${BASE_APIS_URL.SECURED}/admin/agencies`,
-    DETAIL: `${BASE_APIS_URL.SECURED}/admin/agencies/:detail`,
-    UPDATE_STATUS: `${BASE_APIS_URL.SECURED}/admin/agencies/`,
+    DETAIL: `${BASE_APIS_URL.SECURED}/admin/agencies/detail`,
+    UPDATE_STATUS: `${BASE_APIS_URL.SECURED}/admin/agencies/update-status`,
   },
   LAND: {
     CREATE_LAND: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.LAND}/create-land`,
@@ -60,6 +60,10 @@ export const API_URL = {
     ONE_USER: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.USERS}/get-user`,
     SESSION: `/${APIS_URL_GLOBAL_PATH.USERS}/session`,
     CHECK_EMAIL: `${BASE_APIS_URL.UNSECURED}/${APIS_URL_GLOBAL_PATH.USERS}/verified-email`,
+  },
+  USER_ADMIN: {
+    LIST: `${BASE_APIS_URL.SECURED}/admin/users`,
+    UPDATE_STATUS: `${BASE_APIS_URL.SECURED}/admin/users/id/status`,
   },
   COMMON: {
     PERMS: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.COMMON}/${APIS_URL_GLOBAL_PATH.PERMS}`,
