@@ -10,7 +10,7 @@ export class AgencyAdminService {
   // ─────────────────────────────────────────
   // 1. Liste de toutes les agences + owners
   // ─────────────────────────────────────────
-  async getAllAgencies() {
+  async getAllAgencies(): Promise<any[]> {
     try {
       return await this.prismaService.agency.findMany({
         include: {
@@ -47,11 +47,10 @@ export class AgencyAdminService {
   // ─────────────────────────────────────────
   // 2. Détail complet d'une agence par ID
   // ─────────────────────────────────────────
-  async getAgencyById(agencyId: string) {
+  async getAgencyById(agencyId: string): Promise<any> {
     const agency = await this.prismaService.agency.findUnique({
       where: { id: agencyId },
       include: {
-        // ── Propriétaire ──
         owner: {
           include: {
             user: {
@@ -65,13 +64,11 @@ export class AgencyAdminService {
             },
           },
         },
-        // ── Équipe ──
         staff: {
           select: {
             id: true,
           },
         },
-        // ── Abonnement ──
         subscriptions: {
           include: {
             plan: true,
