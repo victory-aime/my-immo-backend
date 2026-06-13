@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { AgencyStatus } from '../../../prisma/generated/enums';
+import { HttpError } from '_root/config/http.error';
 
 @Injectable()
 export class AgencyAdminService {
@@ -9,7 +10,7 @@ export class AgencyAdminService {
   // ─────────────────────────────────────────
   // 1. Liste de toutes les agences + owners
   // ─────────────────────────────────────────
-  async getAllAgencies() {
+  async getAllAgencies(): Promise<any[]> {
     try {
       return await this.prismaService.agency.findMany({
         include: {
@@ -35,8 +36,10 @@ export class AgencyAdminService {
         orderBy: { createdAt: 'desc' },
       });
     } catch (error) {
-      throw new InternalServerErrorException(
+      if (error instanceof HttpError) throw error;
+      throw new HttpError(
         'Une erreur est survenue lors de la récupération des agences.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -44,11 +47,10 @@ export class AgencyAdminService {
   // ─────────────────────────────────────────
   // 2. Détail complet d'une agence par ID
   // ─────────────────────────────────────────
-  async getAgencyById(agencyId: string) {
+  async getAgencyById(agencyId: string): Promise<any> {
     const agency = await this.prismaService.agency.findUnique({
       where: { id: agencyId },
       include: {
-        // ── Propriétaire — infos complètes ──
         owner: {
           include: {
             user: {
@@ -62,7 +64,6 @@ export class AgencyAdminService {
             },
           },
         },
-        // ── Équipe — infos complètes ──
         staff: {
           include: {
             user: {
@@ -74,13 +75,11 @@ export class AgencyAdminService {
             },
           },
         },
-        // ── Abonnement — infos complètes ──
         subscriptions: {
           include: {
             plan: true,
           },
         },
-
         properties: { select: { id: true } },
         batiment: { select: { id: true } },
         villas: { select: { id: true } },
@@ -98,7 +97,7 @@ export class AgencyAdminService {
     });
 
     if (!agency) {
-      throw new NotFoundException(` Le nom de l'agence est introuvable`);
+      throw new HttpError(`Agence est introuvable`, HttpStatus.NOT_FOUND, 'AGENCY_NOT_FOUND');
     }
 
     const {
@@ -137,16 +136,17 @@ export class AgencyAdminService {
       },
     };
   }
+
   // ─────────────────────────────────────────
   // 3. Changer le statut d'une agence
   // ─────────────────────────────────────────
-  async updateAgencyStatus(agencyId: string, status: AgencyStatus) {
+  async updateAgencyStatus(agencyId: string, status: AgencyStatus): Promise<{ message: string }> {
     const agency = await this.prismaService.agency.findUnique({
       where: { id: agencyId },
     });
 
     if (!agency) {
-      throw new NotFoundException(` Le nom de l'agence est introuvable`);
+      throw new HttpError(`Agence est introuvable`, HttpStatus.NOT_FOUND, 'AGENCY_NOT_FOUND');
     }
 
     try {
@@ -155,10 +155,14 @@ export class AgencyAdminService {
         data: { status },
       });
 
-      return { message: 'Mise à jour effectuée avec succès' };
+      return {
+        message: `Le statut de l'agence a été modifié avec succès.`,
+      };
     } catch (error) {
-      throw new InternalServerErrorException(
+      if (error instanceof HttpError) throw error;
+      throw new HttpError(
         'Une erreur est survenue lors de la mise à jour du statut.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
