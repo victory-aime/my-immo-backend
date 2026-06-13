@@ -10,7 +10,7 @@ export class AgencyAdminService {
   // ─────────────────────────────────────────
   // 1. Liste de toutes les agences + owners
   // ─────────────────────────────────────────
-  async getAllAgencies(): Promise<any[]> {
+  async getAllAgencies() {
     try {
       return await this.prismaService.agency.findMany({
         include: {
@@ -47,7 +47,7 @@ export class AgencyAdminService {
   // ─────────────────────────────────────────
   // 2. Détail complet d'une agence par ID
   // ─────────────────────────────────────────
-  async getAgencyById(agencyId: string): Promise<any> {
+  async getAgencyById(agencyId: string) {
     const agency = await this.prismaService.agency.findUnique({
       where: { id: agencyId },
       include: {
@@ -65,14 +65,8 @@ export class AgencyAdminService {
           },
         },
         staff: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
+          select: {
+            id: true,
           },
         },
         subscriptions: {
@@ -114,12 +108,14 @@ export class AgencyAdminService {
       tickets,
       reports,
       invitations,
+      staff,
       ...agencyDetails
     } = agency;
 
     return {
       ...agencyDetails,
       stats: {
+        staff: staff.length,
         properties: properties.length,
         batiments: batiment.length,
         villas: villas.length,
@@ -152,7 +148,7 @@ export class AgencyAdminService {
     try {
       await this.prismaService.agency.update({
         where: { id: agencyId },
-        data: { status },
+        data: { status, isVerified: true },
       });
 
       return {
