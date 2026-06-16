@@ -49,6 +49,7 @@ model User {
   receivedReceipts         MessageReceipt[]          @relation("ReceivedReceipts")
   conversationParticipants ConversationParticipant[]
   pushSubscriptions        PushSubscription[]
+  deviceTokens             DeviceToken[]
 
   @@map("user")
 }
@@ -905,6 +906,18 @@ model PushSubscription {
   @@unique([userId, deviceId]) // 1 subscription par appareil par user
   @@index([userId, isActive])
   @@map("push_subscription")
+}
+
+model DeviceToken {
+  id        String   @id @default(cuid())
+  token     String   @unique // le token FCM — unique pour éviter les doublons
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("device_tokens")
 }
 
 // ─────────────────────────────────────────
