@@ -25,8 +25,8 @@ import { FirebaseService } from '_root/modules/common/services/firebase.service'
     PaymentService,
     NabooService,
     SubscriptionLimitService,
-    PaymentAdminService,
     FirebaseService,
+    PaymentAdminService,
   ],
   exports: [
     PermissionsService,
@@ -34,6 +34,7 @@ import { FirebaseService } from '_root/modules/common/services/firebase.service'
     NabooService,
     SubscriptionLimitService,
     FirebaseService,
+    PaymentAdminService,
   ],
 })
 export class CommonModule {}
