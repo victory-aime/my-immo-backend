@@ -85,6 +85,14 @@ export const API_URL = {
     ALL_PACKS: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.PACKS}/get-all-packs`,
     CREATE_PACK: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.PACKS}/create-pack`,
   },
+  PLANS_ADMIN: {
+    LIST: `${BASE_APIS_URL.SECURED}/admin/plans`,
+    DETAIL: `${BASE_APIS_URL.SECURED}/admin/plans/detail`,
+    CREATE: `${BASE_APIS_URL.SECURED}/admin/plans/create`,
+    UPDATE: `${BASE_APIS_URL.SECURED}/admin/plans/update-plan`,
+    TOGGLE_STATUS: `${BASE_APIS_URL.SECURED}/admin/plans/toggle-status`,
+    DELETE: `${BASE_APIS_URL.SECURED}/admin/plans/delete`,
+  },
   INVITATION: {
     AGENCY_INVITE_LIST: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.INVITE}/agency-invite-list`,
     CREATE_INVITE: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.INVITE}/create-invitation`,
