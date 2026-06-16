@@ -909,13 +909,16 @@ model PushSubscription {
 }
 
 model DeviceToken {
-  id        String   @id @default(cuid())
-  token     String   @unique // le token FCM — unique pour éviter les doublons
+  id        String @id @default(uuid())
+  token     String @unique // le token FCM — unique pour éviter les doublons
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceKey String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([userId, deviceKey])
   @@index([userId])
   @@map("device_tokens")
 }

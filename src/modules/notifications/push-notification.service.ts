@@ -7,8 +7,8 @@ import {
 } from '../notifications/notifications.dto';
 
 @Injectable()
-export class PushSubscriptionService {
-  private readonly logger = new Logger(PushSubscriptionService.name);
+export class PushNotificationService {
+  private readonly logger = new Logger(PushNotificationService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly firebaseService: FirebaseService,
@@ -20,11 +20,13 @@ export class PushSubscriptionService {
    * si l'utilisateur se connecte depuis plusieurs appareils.
    */
   async registerDeviceToken(userId: string, data: RegisterPushNotificationTokenDto): Promise<void> {
-    const { token, deviceKey } = data;
+    const { deviceKey, token } = data;
     await this.prisma.deviceToken.upsert({
-      where: { userId_deviceKey: { userId, deviceKey } },
+      where: {
+        userId_deviceKey: { userId, deviceKey },
+      },
       update: {
-        userId,
+        token,
         updatedAt: new Date(),
       },
       create: {
@@ -52,14 +54,18 @@ export class PushSubscriptionService {
    * Supprime un token (ex: logout, token expiré côté FCM).
    */
   async removeDeviceToken(fcmToken: string): Promise<void> {
+    console.log('Removing device token', fcmToken);
     await this.prisma.deviceToken.deleteMany({
       where: { token: fcmToken },
     });
+    this.logger.warn(`[Push] Token obsolète supprimé: ${fcmToken}`);
   }
 
   async handleTokenError(token: string, error: any) {
     if (error?.code === 'messaging/registration-token-not-registered') {
       await this.removeDeviceToken(token);
+      this.logger.warn(`[Push] Token mort nettoyé, pas de re-throw`);
+      return;
     }
     throw error;
   }
@@ -86,10 +92,10 @@ export class PushSubscriptionService {
     if (!tokens.length) {
       return;
     }
-    await Promise.all(tokens.map((token) => this.sendToToken(token, payload)));
+    await Promise.allSettled(tokens.map((token) => this.sendToToken(token, payload)));
   }
 
   async sendToUsers(userIds: string[], payload: PushNotificationsDto) {
-    await Promise.all(userIds.map((userId) => this.sendToUser(userId, payload)));
+    await Promise.allSettled(userIds.map((userId) => this.sendToUser(userId, payload)));
   }
 }

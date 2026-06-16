@@ -13,24 +13,14 @@ export class PushSubscriptionController {
     private readonly firebaseService: FirebaseService,
   ) {}
 
-  @Post(API_URL.NOTIFICATION.REGISTER_PUSH_TOKEN)
-  register(@Query('userId') userId: string, @Body() dto: RegisterTokenDto) {
-    return this.svc.registerDeviceToken(userId, dto.token);
-  }
-
-  @Delete()
-  deactivate() {
-    return this.svc.removeDeviceToken('e');
-  }
-
   @Post()
-  sendNotification() {
+  sendNotification(@Query('token') token: string) {
     return this.firebaseService.getMessaging().send({
-      token:
-        'c8IjHzEGEGT7NJMu-36A7G:APA91bE4W7XokxvtSJeBnmh4O7LD_KuwftZRdT3IIYSH4vfHiiEehjVHkquvGN7SWl-pLbZBXB23rjBFddBc53g7tMaFq5IDImaGZAZVugEHZkPVHrnuUuQ',
+      token,
       data: {
         title: 'Test notification',
-        body: 'FCM fonctionne correctement',
+        body: 'salem test notification',
+        notificationId: '1234',
       },
     });
   }
