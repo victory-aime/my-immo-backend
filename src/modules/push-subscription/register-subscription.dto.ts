@@ -1,5 +1,5 @@
 // src/push-subscription/dto/register-subscription.dto.ts
-import { IsEnum, IsOptional, IsString, ValidateIf } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, Length, ValidateIf } from 'class-validator';
 import { PushPlatform } from '../../../prisma/generated/enums';
 
 export class RegisterSubscriptionDto {
@@ -30,4 +30,11 @@ export class RegisterSubscriptionDto {
   @IsString()
   @ValidateIf((o) => o.platform === PushPlatform.WEB)
   authKey?: string;
+}
+
+export class RegisterTokenDto {
+  @IsString()
+  @IsNotEmpty()
+  @Length(10, 512) // les tokens FCM font ~150 chars
+  token: string;
 }
