@@ -121,4 +121,10 @@ export const API_URL = {
     ASSIGN_AGENT: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.VISITS}/assign-agent`,
     CANCEL_VISIT: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.VISITS}/cancel-visit`,
   },
+  PAYMENT_ADMIN: {
+    LIST: `${BASE_APIS_URL.SECURED}/admin/payments`,
+    STATS: `${BASE_APIS_URL.SECURED}/admin/payments/stats`,
+    DETAIL: `${BASE_APIS_URL.SECURED}/admin/payments/detail`,
+    REFUND: `${BASE_APIS_URL.SECURED}/admin/payments/refund`,
+  },
 };
