@@ -22,7 +22,6 @@ import { VisitsModule } from '_root/modules/visits/visits.module';
 import { StatsModule } from '_root/modules/stats/stats.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationsModule } from './modules/notifications/notifications.module';
-import { PushSubscriptionModule } from '_root/modules/push-subscription/push-subscription.module';
 
 @Module({
   imports: [
@@ -71,7 +70,6 @@ import { PushSubscriptionModule } from '_root/modules/push-subscription/push-sub
     VisitsModule,
     StatsModule,
     NotificationsModule,
-    PushSubscriptionModule,
   ],
 
   providers: [

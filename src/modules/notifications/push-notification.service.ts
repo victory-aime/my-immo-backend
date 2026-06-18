@@ -51,11 +51,10 @@ export class PushNotificationService {
   }
 
   /**
-   * Supprime un token (ex: logout, token expiré côté FCM).
+   * Supprime un token (ex logout, token expiré côté FCM).
    */
   async removeDeviceToken(fcmToken: string): Promise<void> {
-    console.log('Removing device token', fcmToken);
-    await this.prisma.deviceToken.deleteMany({
+    await this.prisma.deviceToken.delete({
       where: { token: fcmToken },
     });
     this.logger.warn(`[Push] Token obsolète supprimé: ${fcmToken}`);
