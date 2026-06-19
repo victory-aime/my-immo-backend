@@ -814,7 +814,6 @@ model PaymentTransaction {
 
 model Conversation {
   id            String           @id @default(uuid())
-  type          ConversationType @default(DIRECT)
   title         String? // optionnel pour SUPPORT (ex: "Ticket #123")
   lastMessageAt DateTime?
   createdAt     DateTime         @default(now())
@@ -832,7 +831,7 @@ model ConversationParticipant {
   conversationId String
   userId         String
   joinedAt       DateTime  @default(now())
-  lastReadAt     DateTime? // pour calculer les unread count côté client
+  lastReadAt     DateTime?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
