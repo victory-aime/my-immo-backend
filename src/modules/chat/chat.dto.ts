@@ -14,8 +14,14 @@ export class SendMessageDto {
 
 export class CreateConversationDto {
   @IsString()
+  @IsOptional()
   @IsNotEmpty()
-  recipientId: string; // userId du destinataire
+  recipientId?: string;
+
+  @IsString()
+  @IsOptional()
+  @IsNotEmpty()
+  leadId?: string;
 }
 
 export class GetMessagesDto {

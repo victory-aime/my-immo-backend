@@ -88,6 +88,7 @@ export class PushNotificationService {
 
   async sendToUser(userId: string, payload: PushNotificationsDto) {
     const tokens = await this.getTokensByUserId(userId);
+    this.logger.log(`Destinataire — envoi push FCM à ${tokens}`);
     if (!tokens.length) {
       return;
     }
