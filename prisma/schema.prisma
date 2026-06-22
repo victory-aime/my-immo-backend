@@ -838,6 +838,10 @@ model ConversationParticipant {
   leftAt         DateTime?
   lastReadAt     DateTime?
 
+  // 🔥 AJOUTS IMPORTANTS
+  unreadCount       Int     @default(0)
+  lastSeenMessageId String?
+
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -13,9 +13,10 @@ import { getAuthInstance } from '_root/lib/auth';
 import { ChatService } from './chat.service';
 import { SendMessageDto, TypingPayload } from './chat.dto';
 import { PushNotificationService } from '_root/modules/notifications/push-notification.service';
-import { NotificationType } from '../../../prisma/generated/enums';
+import { MessageStatus, NotificationType } from '../../../prisma/generated/enums';
 
 const connectedUsers = new Map<string, Set<string>>();
+const openConversationByUser = new Map<string, string>();
 
 interface SendMessageWithTempId extends SendMessageDto {
   tempId?: string;
@@ -89,19 +90,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (!sockets?.size) {
       connectedUsers.delete(userId);
+      openConversationByUser.delete(userId);
       this.server.emit('presence:update', { userId, online: false });
     }
   }
-
-  // ─── Envoi de message avec ACK ─────────────────────────────────────────────
 
   @SubscribeMessage('message:send')
   async handleMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() dto: SendMessageWithTempId,
-    // Le 3e argument est le callback d'ACK injecté par Socket.IO si le front
-    // l'a fourni dans son emit(). NestJS le passe automatiquement.
-    ack?: SendMessageAck,
   ) {
     const senderId = client.data.userId;
     if (!senderId) {
@@ -109,14 +106,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    this.logger.log(`message:send — sender=${senderId} conv=${dto.conversationId}`);
-
     try {
       const message = await this.chatService.sendMessage(senderId, dto);
-      this.logger.log(`Message sauvegardé — id=${message.id}`);
-
-      // Répond AU SENDER précisément via l'ACK — remplace le bon message optimiste
-      ack?.({ success: true, message });
+      await this.chatService.createReceiptsForMessage(message.id, dto.conversationId, senderId);
 
       const recipientIds = await this.chatService.getActiveRecipientIds(
         dto.conversationId,
@@ -125,13 +117,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       for (const recipientId of recipientIds) {
         const isOnline = connectedUsers.has(recipientId);
+        const hasConversationOpen = openConversationByUser.get(recipientId) === dto.conversationId;
 
         if (isOnline) {
-          this.server.to(`user:${recipientId}`).emit('message:receive', message);
-          this.server.to(`user:${recipientId}`).emit('message:receive', message);
-          this.logger.log(`Message émis en temps réel à user:${recipientId}`);
+          const status = hasConversationOpen ? MessageStatus.READ : MessageStatus.DELIVERED;
+          await this.chatService.updateReceiptStatus(message.id, recipientId, status);
+
+          // FIX : pas de compteur si la conv est ouverte (status = READ, pas de pastille)
+          if (!hasConversationOpen) {
+            await this.chatService.incrementUnreadCount(dto.conversationId, recipientId);
+          }
+
+          this.server.to(`user:${recipientId}`).emit('message:receive', { ...message, status });
         } else {
-          this.logger.log(`Destinataire offline — envoi push FCM à ${recipientId}`);
+          await this.chatService.incrementUnreadCount(dto.conversationId, recipientId);
           try {
             await this.pushService.sendToUser(recipientId, {
               title: 'Nouveau message',
@@ -145,9 +144,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           }
         }
       }
+      const bestStatus = await this.chatService.getMessageConsolidatedStatus(message.id);
+      this.server.to(`user:${senderId}`).emit('message:sent', {
+        ...message,
+        status: bestStatus,
+        tempId: dto.tempId,
+      });
     } catch (error) {
       this.logger.error(`Échec traitement message:send: ${error}`);
-      ack?.({ success: false, error: String(error) });
     }
   }
 
@@ -178,12 +182,36 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('conversation:join')
-  handleJoinConversation(
+  async handleJoinConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string },
   ) {
+    const userId = client.data.userId;
     client.join(`conversation:${data.conversationId}`);
-    this.logger.debug(`socket ${client.id} a rejoint conversation:${data.conversationId}`);
+    this.logger.log(`socket ${client.id} a rejoint conversation:${data.conversationId}`);
+
+    openConversationByUser.set(userId, data.conversationId);
+
+    const readMessageIds = await this.chatService.markAllAsRead(data.conversationId, userId);
+
+    this.logger.log(`conversation:join — userId=${userId} readMessageIds=${readMessageIds.length}`);
+
+    if (!readMessageIds.length) return;
+
+    const senderIds = await this.chatService.getActiveRecipientIds(data.conversationId, userId);
+
+    for (const senderId of senderIds) {
+      this.server.to(`user:${senderId}`).emit('conversation:read', {
+        conversationId: data.conversationId,
+        userId,
+        messageIds: readMessageIds,
+        lastReadAt: new Date(),
+      });
+    }
+
+    this.server.to(`user:${userId}`).emit('unread:reset', {
+      conversationId: data.conversationId,
+    });
   }
 
   @SubscribeMessage('conversation:leave')
@@ -191,7 +219,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string },
   ) {
+    const userId = client.data.userId;
     client.leave(`conversation:${data.conversationId}`);
+
+    if (openConversationByUser.get(userId) === data.conversationId) {
+      openConversationByUser.delete(userId);
+    }
   }
 
   isUserOnline(userId: string): boolean {

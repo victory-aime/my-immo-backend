@@ -1,5 +1,6 @@
 // modules/chat/dto/chat.dto.ts
 import { IsString, IsNotEmpty, MaxLength, IsOptional } from 'class-validator';
+import { MessageStatus } from '../../../prisma/generated/enums';
 
 export class SendMessageDto {
   @IsString()
@@ -57,6 +58,7 @@ export interface MessagePayload {
   content: string;
   type: string;
   metadata: Record<string, string[]> | null;
+  status?: MessageStatus;
   createdAt: Date;
 }
 

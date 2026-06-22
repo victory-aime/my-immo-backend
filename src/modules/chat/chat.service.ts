@@ -1,7 +1,7 @@
 import { Injectable, ForbiddenException, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { SendMessageDto, GetMessagesDto, MessagePayload, CreateConversationDto } from './chat.dto';
-import { ConversationType, Role } from '../../../prisma/generated/enums';
+import { ConversationType, MessageStatus, Role } from '../../../prisma/generated/enums';
 import { UsersService } from '_root/modules/users/users.service';
 
 const DEFAULT_PAGE_SIZE = 30;
@@ -32,22 +32,48 @@ export class ChatService {
     throw new ForbiddenException('recipientId ou leadId requis');
   }
 
+  // chat.service.ts — getUserConversations avec statut consolidé du dernier message
+  // Plus de receipts bruts (instables) — on calcule le statut une fois, stable.
+
   async getUserConversations(userId: string) {
-    return this.prisma.conversation.findMany({
+    const conversations = await this.prisma.conversation.findMany({
       where: {
         participants: { some: { userId, leftAt: null } },
       },
       include: {
         participants: {
-          where: { leftAt: null, userId: { not: userId } },
+          where: { leftAt: null },
           include: { user: { select: { id: true, name: true } } },
         },
-        messages: { orderBy: { createdAt: 'desc' }, take: 1 },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
       },
       orderBy: { updatedAt: 'desc' },
     });
-  }
 
+    // Hydrate le statut consolidé uniquement pour les derniers messages
+    // envoyés par l'utilisateur courant (les seuls qui affichent une icône statut)
+    const myLastMessageIds = conversations
+      .map((conv) => conv.messages[0])
+      .filter((msg) => msg?.senderId === userId)
+      .map((msg) => msg.id);
+
+    const statusMap =
+      myLastMessageIds.length > 0
+        ? await this.hydrateMessageStatuses(myLastMessageIds)
+        : new Map<string, MessageStatus>();
+
+    return conversations.map((conv) => ({
+      ...conv,
+      messages: conv.messages.map((msg) => ({
+        ...msg,
+        metadata: msg.metadata as Record<string, string[]> | null,
+        status: msg.senderId === userId ? (statusMap.get(msg.id) ?? MessageStatus.SENT) : null,
+      })),
+    }));
+  }
   async sendMessage(senderId: string, dto: SendMessageDto): Promise<MessagePayload> {
     await this.assertActiveParticipant(senderId, dto.conversationId);
 
@@ -70,6 +96,7 @@ export class ChatService {
 
     return this.toMessagePayload({
       ...message,
+      status: MessageStatus.SENT,
       metadata: message.metadata as Record<string, string[]> | null,
     });
   }
@@ -95,13 +122,32 @@ export class ChatService {
     const hasMore = messages.length > limit;
     const items = hasMore ? messages.slice(0, limit) : messages;
 
+    const statusMap = await this.hydrateMessageStatuses(items.map((m) => m.id));
+
+    console.log('statusMap', statusMap);
+
     return {
       items: items.map((value) => ({
         ...value,
         metadata: value.metadata as Record<string, string[]> | null,
+        status: statusMap.get(value.id) ?? MessageStatus.SENT,
       })),
       nextCursor: hasMore ? items[items.length - 1].id : null,
     };
+  }
+
+  async unreadCount(dto: { conversationId: string; recipientId: string }) {
+    await this.prisma.conversationParticipant.update({
+      where: {
+        conversationId_userId: {
+          conversationId: dto.conversationId,
+          userId: dto.recipientId,
+        },
+      },
+      data: {
+        unreadCount: { increment: 1 },
+      },
+    });
   }
 
   async getActiveRecipientIds(conversationId: string, excludeUserId: string): Promise<string[]> {
@@ -110,6 +156,141 @@ export class ChatService {
       select: { userId: true },
     });
     return participants.map((p) => p.userId);
+  }
+
+  /**
+   * Crée un MessageReceipt SENT pour chaque destinataire actif au moment
+   * de la création du message. Appelé juste après message.create.
+   */
+  async createReceiptsForMessage(
+    messageId: string,
+    conversationId: string,
+    senderId: string,
+  ): Promise<void> {
+    const recipientIds = await this.getActiveRecipientIds(conversationId, senderId);
+
+    if (!recipientIds.length) return;
+
+    await this.prisma.messageReceipt.createMany({
+      data: recipientIds.map((userId) => ({
+        messageId,
+        userId,
+        status: MessageStatus.SENT,
+      })),
+      skipDuplicates: true,
+    });
+  }
+
+  /**
+   * Met à jour le statut d'un receipt — appelé quand on sait que le
+   * destinataire est online (DELIVERED) ou qu'il vient d'ouvrir la
+   * conversation (READ).
+   */
+  async updateReceiptStatus(
+    messageId: string,
+    userId: string,
+    status: MessageStatus,
+  ): Promise<void> {
+    await this.prisma.messageReceipt.updateMany({
+      where: {
+        messageId,
+        userId,
+        status: { not: status === 'READ' ? undefined : MessageStatus.READ },
+      },
+      data: {
+        status,
+        ...(status === MessageStatus.READ && { readAt: new Date() }),
+      },
+    });
+  }
+
+  /**
+   * Marque TOUS les messages non-lus d'une conversation comme READ pour
+   * cet utilisateur — appelé à l'ouverture de la conversation (conversation:join)
+   * ET au moment de l'envoi si le destinataire a déjà la conv ouverte.
+   *
+   * Retourne messageIds effectivement passés à READ, pour notifier
+   * précisément les expéditeurs concernés (pas un broadcast générique).
+   */
+  async markAllAsRead(conversationId: string, userId: string): Promise<string[]> {
+    const unreadReceipts = await this.prisma.messageReceipt.findMany({
+      where: {
+        userId,
+        status: { not: MessageStatus.READ },
+        message: { conversationId },
+      },
+      select: { id: true, messageId: true },
+    });
+
+    await Promise.all([
+      unreadReceipts.length > 0
+        ? this.prisma.messageReceipt.updateMany({
+            where: { id: { in: unreadReceipts.map((r) => r.id) } },
+            data: { status: MessageStatus.READ, readAt: new Date() },
+          })
+        : Promise.resolve(),
+
+      this.prisma.conversationParticipant.update({
+        where: { conversationId_userId: { conversationId, userId } },
+        data: { unreadCount: 0, lastReadAt: new Date() },
+      }),
+    ]);
+
+    return unreadReceipts.map((r) => r.messageId);
+  }
+
+  async incrementUnreadCount(conversationId: string, recipientId: string): Promise<void> {
+    await this.prisma.conversationParticipant.update({
+      where: { conversationId_userId: { conversationId, userId: recipientId } },
+      data: { unreadCount: { increment: 1 } },
+    });
+  }
+  /**
+   * Calcule le statut "consolidé" d'un message pour l'affichage sender —
+   * le meilleur statut parmi tous ses receipts (READ > DELIVERED > SENT).
+   */
+  async getMessageConsolidatedStatus(messageId: string): Promise<MessageStatus> {
+    const receipts = await this.prisma.messageReceipt.findMany({
+      where: { messageId },
+      select: { status: true },
+    });
+
+    if (!receipts.length) return MessageStatus.SENT;
+    if (receipts.every((r) => r.status === MessageStatus.READ)) return MessageStatus.READ;
+    if (receipts.some((r) => r.status !== MessageStatus.SENT)) return MessageStatus.DELIVERED;
+    return MessageStatus.SENT;
+  }
+
+  /**
+   * Hydrate le statut de plusieurs messages d'un coup (pour getMessages,
+   * évite N+1 queries).
+   */
+  async hydrateMessageStatuses(messageIds: string[]): Promise<Map<string, MessageStatus>> {
+    if (!messageIds.length) return new Map();
+
+    const receipts = await this.prisma.messageReceipt.findMany({
+      where: { messageId: { in: messageIds } },
+      select: { messageId: true, status: true },
+    });
+
+    const byMessage = new Map<string, MessageStatus[]>();
+    for (const r of receipts) {
+      const list = byMessage.get(r.messageId) ?? [];
+      list.push(r.status);
+      byMessage.set(r.messageId, list);
+    }
+
+    const result = new Map<string, MessageStatus>();
+    for (const [messageId, statuses] of byMessage) {
+      const best = statuses.every((s) => s === MessageStatus.READ)
+        ? MessageStatus.READ
+        : statuses.some((s) => s !== MessageStatus.SENT)
+          ? MessageStatus.DELIVERED
+          : MessageStatus.SENT;
+      result.set(messageId, best);
+    }
+
+    return result;
   }
 
   private async assertParticipant(userId: string, conversationId: string): Promise<void> {
@@ -136,6 +317,7 @@ export class ChatService {
       content: message.content,
       type: message.type,
       metadata: message.metadata ?? null,
+      status: message.status,
       createdAt: message.createdAt,
     };
   }
