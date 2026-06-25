@@ -10,7 +10,6 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { SubscriptionLimitService } from '_root/modules/common/services/subscription-limit.service';
 import { PaymentAdminService } from './services/payment-admin.service';
 import { AdminPaymentController } from './admin-payment.controller';
-
 @Module({
   imports: [
     HttpModule.register({ timeout: 15_000, maxRedirects: 3 }),
