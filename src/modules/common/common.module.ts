@@ -18,7 +18,7 @@ import { FirebaseService } from '_root/modules/common/services/firebase.service'
     ConfigModule,
     CloudinaryModule,
   ],
-  controllers: [CommonController],
+  controllers: [CommonController, AdminPaymentController],
   providers: [
     PermissionsService,
     CommonService,
