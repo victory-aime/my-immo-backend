@@ -11,9 +11,10 @@ export class PackAdminService {
   // ─────────────────────────────────────────
   // 1. Liste tous les plans avec features et limites
   // ─────────────────────────────────────────
-  async getAllPlans(): Promise<any[]> {
+  async getAllPlans() {
     try {
       return await this.prisma.subscriptionPlan.findMany({
+        where: { planCategory: 'SUBSCRIPTION_BASED' },
         include: {
           planFeatures: {
             include: { feature: true },
