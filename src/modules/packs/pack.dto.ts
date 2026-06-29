@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Plan } from '../../../prisma/generated/enums';
+import { BillingCycle, Plan } from '../../../prisma/generated/enums';
+import { PlanPricing } from 'prisma/generated/client';
 
 export class PlanFeatureInput {
   @ApiProperty({ example: 'uuid-de-la-feature', description: 'Identifiant de la fonctionnalité' })
@@ -21,6 +22,16 @@ export class CreatePlanInput {
 
   @ApiPropertyOptional({ example: true, description: 'Indique si le plan est actif' })
   isActive?: boolean;
+
+  @ApiPropertyOptional({
+    example: { billingCycle: BillingCycle.MONTHLY, price: 5000, currency: 'XOF' },
+    description: 'Indique si le plan est actif',
+  })
+  pricing: {
+    billingCycle: BillingCycle;
+    price: number;
+    discountPercentage: number;
+  }[];
 
   @ApiProperty({
     type: [PlanFeatureInput],
