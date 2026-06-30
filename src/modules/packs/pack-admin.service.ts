@@ -1,9 +1,8 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '_root/database/prisma.service';
 import { HttpError } from '_root/config/http.error';
-import { Decimal } from '../../../prisma/generated/internal/prismaNamespace';
 import { CreatePlanInput, UpdatePlanInput } from './pack.dto';
-import { BillingCycle, PlanCategory } from '../../../prisma/generated/enums';
+import { PlanCategory } from '../../../prisma/generated/enums';
 
 @Injectable()
 export class PackAdminService {
@@ -129,10 +128,10 @@ export class PackAdminService {
   // ─────────────────────────────────────────
   // 4. Mettre à jour un plan + ses features/limites
   // ─────────────────────────────────────────
-  async updatePlan(planId: string, data: UpdatePlanInput): Promise<any> {
+  async updatePlan(planId: string, data: UpdatePlanInput) {
     const existing = await this.prisma.subscriptionPlan.findUnique({
       where: { id: planId },
-      include: { planFeatures: true },
+      include: { planFeatures: true, pricings: true },
     });
 
     if (!existing) {
@@ -141,16 +140,6 @@ export class PackAdminService {
 
     try {
       await this.prisma.$transaction(async (tx) => {
-        await tx.subscriptionPlan.update({
-          where: { id: planId },
-          data: {
-            ...(data.commissionRate !== undefined && {
-              commissionRate: new Decimal(data.commissionRate),
-            }),
-            ...(data.isActive !== undefined && { isActive: data.isActive }),
-          },
-        });
-
         if (data.features && data.features.length > 0) {
           const featureIds = data.features.map((f) => f.featureId);
           const foundFeatures = await tx.feature.findMany({
@@ -187,13 +176,34 @@ export class PackAdminService {
             ),
           );
         }
+        await Promise.all(
+          data.pricing.map((pricing) =>
+            tx.planPricing.upsert({
+              where: {
+                planId_billingCycle: {
+                  planId,
+                  billingCycle: pricing.billingCycle,
+                },
+              },
+              update: {
+                price: pricing.price,
+                discountPercentage: pricing.discountPercentage,
+              },
+              create: {
+                planId,
+                billingCycle: pricing.billingCycle,
+                price: pricing.price,
+                currency: 'XOF',
+                discountPercentage: pricing.discountPercentage,
+              },
+            }),
+          ),
+        );
 
-        tx.subscriptionPlan.findUnique({
+        await tx.subscriptionPlan.update({
           where: { id: planId },
-          include: {
-            planFeatures: {
-              include: { feature: true },
-            },
+          data: {
+            isActive: data.isActive,
           },
         });
       });
