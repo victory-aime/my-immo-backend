@@ -19,6 +19,7 @@ enum APIS_URL_GLOBAL_PATH {
   LEADS = 'leads',
   VISITS = 'visits',
   PUSH_NOTIF = 'push-notification',
+  INTEGRATIONS = 'integrations',
 }
 
 enum CLOUDINARY_FOLDER_NAME {
