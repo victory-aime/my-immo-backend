@@ -57,8 +57,6 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "11.1.18",
     "@nestjs/jwt": "^11.0.2",
-    "@simplewebauthn/server": "13.3.0",
-    "zod": "4.3.6",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.1.23",
     "@nestjs/throttler": "^6.5.0",
@@ -66,6 +64,7 @@
     "@node-rs/argon2": "^2.0.2",
     "@prisma/adapter-pg": "^6.7.0",
     "@prisma/client": "^6.7.0",
+    "@simplewebauthn/server": "13.3.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "@thallesp/nestjs-better-auth": "^2.2.5",
     "bcrypt": "^6.0.0",
@@ -83,6 +82,7 @@
     "figlet": "^1.9.4",
     "firebase-admin": "^13.10.0",
     "google-auth-library": "^10.5.0",
+    "googleapis": "^173.0.0",
     "graphql": "^16.12.0",
     "handlebars": "^4.7.8",
     "ioredis": "^5.10.1",
@@ -98,7 +98,8 @@
     "socket.io": "^4.8.3",
     "speakeasy": "^2.0.0",
     "swagger-ui-express": "^5.0.1",
-    "winston": "^3.19.0"
+    "winston": "^3.19.0",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
