@@ -5,7 +5,6 @@ import {
   Query,
   Res,
   UseInterceptors,
-  UploadedFile,
   ParseEnumPipe,
   UploadedFiles,
 } from '@nestjs/common';
@@ -14,13 +13,14 @@ import { Response } from 'express';
 import { Session } from '@thallesp/nestjs-better-auth';
 import { IntegrationsService } from './services/integrations.service';
 import { IntegrationProviderType } from '../../../prisma/generated/enums';
-import { API_URL } from '_root/config/api';
+import { CLOUDINARY_FOLDER_NAME } from '_root/config/enum';
 
-@Controller()
+@Controller('v1/secure/integrations')
 export class IntegrationsController {
   constructor(private readonly integrationsService: IntegrationsService) {}
 
-  @Get(API_URL.PROVIDERS.CONNECT)
+  /** Route SÉCURISÉE — appelée en fetch() par le front, renvoie juste l'URL */
+  @Get('/providers/connect-url')
   getConnectUrl(
     @Query('provider', new ParseEnumPipe(IntegrationProviderType))
     provider: IntegrationProviderType,
@@ -34,13 +34,13 @@ export class IntegrationsController {
    * Callback OAuth — PAS de guard ici : l'utilisateur arrive depuis Google/Dropbox,
    * sans JWT applicatif. La sécurité vient du `state` signé (JWT court, 5min, anti-CSRF).
    */
-  @Get(API_URL.PROVIDERS.CALLBACK)
+  @Get('/providers/callback')
   async callback(@Query('code') code: string, @Query('state') state: string, @Res() res: Response) {
     const { frontRedirectUrl } = await this.integrationsService.handleCallback(code, state);
     return res.redirect(frontRedirectUrl);
   }
 
-  @Get(API_URL.PROVIDERS.STATUS)
+  @Get('/providers/status')
   getStatus(
     @Query('provider', new ParseEnumPipe(IntegrationProviderType))
     provider: IntegrationProviderType,
@@ -49,7 +49,7 @@ export class IntegrationsController {
     return this.integrationsService.getStatus(session.user.id, provider);
   }
 
-  @Post(API_URL.PROVIDERS.DISCONNECT)
+  @Post('/providers/disconnect')
   disconnect(
     @Query('provider', new ParseEnumPipe(IntegrationProviderType))
     provider: IntegrationProviderType,
@@ -58,7 +58,7 @@ export class IntegrationsController {
     return this.integrationsService.disconnect(session.user.id, provider);
   }
 
-  @Post(API_URL.PROVIDERS.UPLOAD_FILES)
+  @Post('/providers/upload')
   @UseInterceptors(FileFieldsInterceptor([{ name: 'file', maxCount: 5 }]))
   async uploadFile(
     @Query('provider', new ParseEnumPipe(IntegrationProviderType))
@@ -75,17 +75,16 @@ export class IntegrationsController {
     }
   }
 
-  @Get(API_URL.PROVIDERS.FILES_LIST)
+  @Get('/providers/files')
   listFiles(
     @Query('provider', new ParseEnumPipe(IntegrationProviderType))
     provider: IntegrationProviderType,
-    @UploadedFile() file: Express.Multer.File,
     @Session() session: { user: { id: string } },
   ) {
     return this.integrationsService.listFiles(session.user.id, provider);
   }
 
-  @Get(API_URL.PROVIDERS.TRASHED_FILES_LIST)
+  @Get('/providers/list-trashed')
   listTrashedFiles(
     @Query('provider', new ParseEnumPipe(IntegrationProviderType))
     provider: IntegrationProviderType,
@@ -94,7 +93,7 @@ export class IntegrationsController {
     return this.integrationsService.listTrashedFiles(session.user.id, provider);
   }
 
-  @Post(API_URL.PROVIDERS.TRASHED_FILE)
+  @Post('/providers/trashed')
   trashedFiles(
     @Query('provider', new ParseEnumPipe(IntegrationProviderType))
     provider: IntegrationProviderType,
@@ -104,7 +103,7 @@ export class IntegrationsController {
     return this.integrationsService.trashFile(session.user.id, provider, fileId);
   }
 
-  @Post(API_URL.PROVIDERS.DELETE_FILE)
+  @Post('/providers/delete-file')
   deleteFiles(
     @Query('provider', new ParseEnumPipe(IntegrationProviderType))
     provider: IntegrationProviderType,

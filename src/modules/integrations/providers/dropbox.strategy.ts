@@ -8,7 +8,7 @@ import { TokenSet } from '../interfaces/token-set.interface';
 import { IntegrationProviderType } from 'prisma/generated/enums';
 
 @Injectable()
-export class DropboxStrategy {
+export class DropboxStrategy implements CloudProviderStrategy {
   readonly key = IntegrationProviderType.DROPBOX;
 
   getAuthUrl(state: string): string {

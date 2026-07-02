@@ -127,6 +127,7 @@ export class GoogleDriveStrategy implements CloudProviderStrategy {
       mimeType: f.mimeType ?? undefined,
       size: f.size ?? undefined,
       modifiedTime: f.modifiedTime ?? undefined,
+      trashed: f.trashed ?? undefined,
     }));
   }
 

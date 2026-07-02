@@ -13,6 +13,7 @@ export interface ListedFileResult {
   mimeType?: string;
   size?: string;
   modifiedTime?: string;
+  trashed?: boolean;
 }
 
 export interface CloudProviderStrategy {
