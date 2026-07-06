@@ -129,4 +129,8 @@ export const API_URL = {
     DETAIL: `${BASE_APIS_URL.SECURED}/admin/payments/detail`,
     REFUND: `${BASE_APIS_URL.SECURED}/admin/payments/refund`,
   },
+  FEATURES_ADMIN: {
+    LIST: `${BASE_APIS_URL.SECURED}/admin/features`,
+    DETAIL: `${BASE_APIS_URL.SECURED}/admin/features/detail`,
+  },
 };
