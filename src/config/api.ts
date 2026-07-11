@@ -125,9 +125,10 @@ export const API_URL = {
   },
   PAYMENT_ADMIN: {
     LIST: `${BASE_APIS_URL.SECURED}/admin/payments`,
-    STATS: `${BASE_APIS_URL.SECURED}/admin/payments/stats`,
     DETAIL: `${BASE_APIS_URL.SECURED}/admin/payments/detail`,
     REFUND: `${BASE_APIS_URL.SECURED}/admin/payments/refund`,
+    ALL_REFUNDS: `${BASE_APIS_URL.SECURED}/admin/payments/refund-all`,
+    REFUND_ID: `${BASE_APIS_URL.SECURED}/admin/payments/refund-id`,
   },
   PROVIDERS: {
     CONNECT: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.INTEGRATIONS}/providers/connect-url`,
