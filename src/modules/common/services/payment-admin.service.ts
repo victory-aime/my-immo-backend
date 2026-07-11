@@ -89,9 +89,9 @@ export class PaymentAdminService {
     }
   }
 
-  async getPayoutById(params: { order_id: string }) {
+  async getPayoutById(order_id: string) {
     try {
-      return this.nabooService.getRefundTransactionById(params);
+      return this.nabooService.getRefundTransactionById(order_id);
     } catch (error) {
       if (error instanceof HttpError) throw error;
       throw new HttpError(

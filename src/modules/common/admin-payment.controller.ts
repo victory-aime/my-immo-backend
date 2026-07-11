@@ -94,6 +94,6 @@ export class AdminPaymentController {
 
   @Get(API_URL.PAYMENT_ADMIN.REFUND_ID)
   async getPayoutById(@Query('order_id') order_id: string) {
-    return this.paymentAdminService.getPayoutById({ order_id });
+    return this.paymentAdminService.getPayoutById(order_id);
   }
 }

@@ -37,6 +37,12 @@ export class NabooService {
       'Content-Type': 'application/json',
     };
   }
+  private get authPayoutHeaders() {
+    return {
+      Authorization: `Bearer ${this.config.get<string>('NABOOPAY_API_PAYOUT_KEY')}`,
+      'Content-Type': 'application/json',
+    };
+  }
 
   // ── Gestion centralisée des erreurs Axios/NabooPay ────────────────────────
   private handleError(err: AxiosError, context: string): never {
@@ -163,13 +169,17 @@ export class NabooService {
     }
   }
 
-  async getRefundTransactionById(params: { order_id: string }) {
+  async getRefundTransactionById(order_id: string) {
     try {
-      const { data } = await axios.get<NabooPayoutByIdResponse>(`${this.baseUrl}/payouts`, {
-        params,
-        headers: this.authHeaders,
-      });
-      this.logger.log(`transaction remboursé — order_id: ${data}`);
+      const { data } = await axios.get<NabooPayoutByIdResponse>(
+        `${this.baseUrl}/payouts/${order_id}`,
+        {
+          headers: this.authPayoutHeaders,
+        },
+      );
+      console.log('data', data);
+      this.logger.debug(`transaction recupere — order_id: ${data}`);
+
       return data;
     } catch (err) {
       this.handleError(err as AxiosError, 'getRefundTransactionById');
