@@ -141,4 +141,8 @@ export const API_URL = {
     TRASHED_FILE: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.INTEGRATIONS}/providers/trashed-file`,
     DELETE_FILE: `${BASE_APIS_URL.SECURED}/${APIS_URL_GLOBAL_PATH.INTEGRATIONS}/providers/delete-file`,
   },
+  FEATURES_ADMIN: {
+    LIST: `${BASE_APIS_URL.SECURED}/admin/features`,
+    DETAIL: `${BASE_APIS_URL.SECURED}/admin/features/detail`,
+  },
 };
